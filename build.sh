@@ -1,0 +1,44 @@
+#!/bin/env/bash
+# -x for printing commands and variables, -v for commands-only
+set -e
+
+
+err_report() {
+    echo "Build failure on line $1 $2"
+}
+trap 'err_report $LINENO $ERR' ERR
+# Can be triggered simply with 'false' command
+
+unameOut="$(uname -s)"
+echo "Current platform: $unameOut"
+if [ "$unameOut" == "Darwin" ]; then
+    true
+elif [ "$unameOut" == "Linux" ]; then
+    true
+else
+    echo "Unsupported machine: $unameOut, (Darwin and Linux are supported)"
+    exit 125
+fi
+
+# Downloading unofficial EDK2 release to be used in build system (no other good option on Mac without self build)
+BASE_URL="https://retrage.github.io/edk2-nightly/bin/"
+
+EFI_RELEASE_FILE="RELEASEAARCH64_QEMU_EFI.fd"
+EFI_RELEASE_SHA256="dc95bf89efecc0275e5a93620a4d51dcdd9e8b6e03555bd7f3c276dae42e58af"
+
+if [ ! -f $EFI_RELEASE_FILE ]; then
+    wget "$BASE_URL$EFI_RELEASE_FILE"
+fi
+
+
+if [ "$unameOut" == "Darwin" ]; then
+    echo -n "$EFI_RELEASE_SHA256  $EFI_RELEASE_FILE" | shasum -ca 256 -
+elif [ "$unameOut" == "Linux" ]; then
+    echo -n "$EFI_RELEASE_SHA256  $EFI_RELEASE_FILE" | sha256sum -c -
+fi
+
+echo "EFI downloaded and verified successfully for AARCH64"
+
+
+export PACKER_LOG=1 # Enable logging of packer
+packer build -var="efi_release_file=$EFI_RELEASE_FILE" archlinux.pkr.hcl 
