@@ -1,0 +1,7 @@
+# Virtual filesystems
+*.raw
+*.qcow2
+# Compressed et. al.
+*.tar.gz
+# EFI bootloader
+*.fd 
