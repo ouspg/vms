@@ -1,4 +1,4 @@
-# UEFI-based Arch Linux builds for AAARCH64 (Apple M1/M2)) UTM and x86_64 VirtualBox platforms
+# Custom UEFI-based Arch Linux builds for AArch64 and x86_64 architectures
 
 This repository contains build instructions for custom Arch Linux for multi-platform and multi-architecture.
 Supported builds include Arch Linux with Black Arch repositories for 
