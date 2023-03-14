@@ -5,3 +5,5 @@
 *.tar.gz
 # EFI bootloader
 *.fd 
+# Build output
+output_archlinuxarm
