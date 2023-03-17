@@ -1,0 +1,43 @@
+{
+    "additional-repositories": [],
+    "config_version": "2.5.3",
+    "bootloader": "systemd-bootctl",
+    "harddisks": ["/dev/vda"],
+    "hostname": "archlinux",
+    "debug": false,
+    "audio": "pipewire",
+    "nic": {
+        "dhcp": true,
+        "dns": null,
+        "gateway": null,
+        "iface": null,
+        "ip": null,
+        "type": "nm"
+    },
+    "no_pkg_lookups": false,
+    "offline": false,
+    "packages": [
+        "vim",
+        "jq",
+        "spice-vdagent",
+        "docker",
+        "git",
+        "base-devel",
+        "firefox",
+        "grml-zsh-config"
+    ],
+    "services": ["docker"],
+    "profile": "gnome",
+    "silent": true,
+    "swap": false,
+    "sys-encoding": "utf-8",
+    "sys-language": "en_US",
+    "keyboard-layout": "us",
+    "keyboard-language": "us",
+    "timezone": "Europe/Helsinki",
+    "version": "2.5.3",
+    "custom-commands": [
+        "usermod -aG docker arch",
+        "curl https://blackarch.org/strap.sh | sh"
+    ]
+}
