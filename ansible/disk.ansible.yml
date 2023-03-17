@@ -1,0 +1,55 @@
+- name: Set partitions
+  hosts: localhost
+  connection: local
+  become: true
+  tasks:
+    - name: Create boot filesystem
+      community.general.parted:
+        device: /dev/vda
+        fs_type: fat32
+        label: gpt
+        number: 1
+        state: present
+        part_end: 500MiB
+
+    - name: Create root filesystem
+      community.general.parted:
+        device: /dev/vda
+        fs_type: btrfs
+        label: gpt
+        number: 2
+        state: present
+        part_start: 500MiB
+        part_end: 100%
+
+    - name: Format EFI partition
+      community.general.filesystem:
+        dev: /dev/vda1
+        fstype: vfat
+
+    - name: Format root partition
+      community.general.filesystem:
+        dev: /dev/vda2
+        fstype: btrfs
+
+    - name: Mount root fs
+      ansible.posix.mount:
+        fstype: btrfs
+        src: /dev/vda2
+        path: /mnt/
+        state: mounted
+
+    # - name: Boot directory
+    #   file:
+    #     path: /mnt/boot
+    #     state: directory
+
+    - name: Mount boot
+      ansible.posix.mount:
+        fstype: auto
+        src: /dev/vda1
+        path: /mnt/boot
+        state: mounted
+
+    - name: Install base Arch
+      ansible.builtin.command: quickinst /mnt
