@@ -1,4 +1,6 @@
 # Virtual filesystems
+*.iso
+*.7zip
 *.raw
 *.qcow2
 # Compressed et. al.
@@ -6,5 +8,6 @@
 # EFI bootloader
 *.fd 
 # Build output
-output_archlinuxarm
+output_arch*
 archlinuxarm
+allas_conf

@@ -4,7 +4,6 @@ qemu-system-aarch64 \
     -monitor stdio \
     -accel hvf \
     -cpu host \
-    -boot strict=off \
     -display cocoa,show-cursor=on \
     -smp 1 \
     -m 3072M \
@@ -16,6 +15,6 @@ qemu-system-aarch64 \
     -device nec-usb-xhci \
     -device usb-kbd \
     -device usb-tablet \
-    -drive file=/Users/nicce/teaching/vms/archboot-2023-aarch64.iso,media=cdrom \
+    -drive file="$HOME/teaching/vms/archboot-2023.03.16-06.36-aarch64.iso,media=cdrom" \
     -drive file=archlinux.raw,format=raw,if=virtio,cache=writethrough \
-    -machine virt,highmem=on \
+    -machine virt,highmem=on

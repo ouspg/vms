@@ -26,17 +26,18 @@ flowchart LR
 WIP
 
 
-### Dependencies (MacOS)
+### Build dependencies (MacOS)
  
  * QEMU
  * wget
  * [Packer](https://www.packer.io/)
- * [UTM](https://mac.getutm.app/) (For improved testing experience)
+ * [UTM](https://mac.getutm.app/) (optional, for improved testing experience)
  * (indirect) [archinstall](https://github.com/archlinux/archinstall)
+ * p7zip (for compression)
 
  Install with Nix:
  ```sh
- nix-env -iA nixpkgs.qemu nixpkgs.wget nixpkgs.packer
+ nix-env -iA nixpkgs.qemu nixpkgs.wget nixpkgs.packer  nixpkgs.p7zip
  ```
 Applications with GUI might be more reasonable to install as `brew casks` instead to save some mental health.
 
@@ -44,13 +45,73 @@ Applications with GUI might be more reasonable to install as `brew casks` instea
 brew install --cask utm
 ```
 
+### Archinstall
 
-#### UTM
+Archinstall automates most of the installation process.
+Currently, there is no need to offer other distributions as custom virtual machines, so Ansible et. al. might be a bit overkill.
 
-To get the best out of UTM, enable `retina` support, select GPU accelerated display driver, e.g. `virtio-gpu-gl-pci` scale Gnome to 200% for improved GUI experience. 
+Configuration files are found in the [archinstall](archinstall) directory.
 
-### Linux
+### ARM limitations
 
+Archinstall is meant for x86_64 architecture. 
+There are some caveats; the GRUB bootloader is installed with hardcoded parameters for x86_64, but systemd-bootctl works well enough.
+We only need to rename the Kernel image from `/boot/loader/entries/` configurations to make the ARM machine UEFI bootable.
+
+## Deployment
+
+### Deploy dependencies
+
+Publishing into the [Allas object storage](http://ouspg.org/archlinuxarm) requires some additional tools
+
+  * rclone
+  * [allas-cli-utils](https://github.com/CSCfi/allas-cli-utils)
+
+Install `rclone` with Nix, for example:
+```console
+nix-env -iA nixpkgs.rclone
+```
+
+Configuration, [based on docs](https://docs.csc.fi/data/Allas/using_allas/rclone_local/):
+
+```console
+wget https://raw.githubusercontent.com/CSCfi/allas-cli-utils/master/allas_conf
+source allas_conf -u your-csc-username -p your-csc-project-name
+
+```
+Rclone usage: https://docs.csc.fi/data/Allas/using_allas/rclone/
+
+### Signing
+
+To sign builds manually:
+```
+gpg --output archlinuxarm.sig --detach-sig archlinuxarm.7zip
+```
+
+To verify:
+```console
+gpg --verify archlinuxarm.sig archlinuxarm.7zip
+```
+
+### Allas URL shortening
+
+Currently, [ouspg.org](https://github.com/ouspg/ouspg.github.io) is a bit abused as a URL shortener with client-side redirects.
+
+See for ARM
+  * [Arch Linux ARM shortened](https://github.com/ouspg/ouspg.github.io/blob/main/content/archlinuxarm.md)
+  * [Arch Linux ARM sig. shortened](https://github.com/ouspg/ouspg.github.io/blob/main/content/archlinuxarm.sig.md)
+
+## Testing and running
+
+### UTM
+
+To get the best out of UTM, enable `retina` support, select GPU accelerated display driver, e.g. `virtio-gpu-gl-pci`, and scale Gnome to 200% for an improved GUI experience. 
+
+However, GPU acceleration should be disabled (use `virtio-gpu-pci`) if the browser must be used inside the guest VM, for now.
+  * https://github.com/utmapp/UTM/issues/4983
+  * https://github.com/utmapp/UTM/issues/4941
+
+### Linux & Windows
 
 
 ## Customisation
@@ -86,7 +147,7 @@ Print the favourites from desktop
  ```
 gsettings set org.gnome.shell favorite-apps
 
-['org.gnome.Nautilus.desktop', 'kitty.desktop']700702237.213361@[432737881898125] (UTM):* SLSGetNextEventRecordInternal: loc (601.4, 401.0) conn 0xb1663 KeyUp win 0x0 flags 0x100 set 252 char 99; key 8 data 99 special 0 repeat 0 keybd 91
+['org.gnome.Nautilus.desktop', 'org.wezfurlong.wezterm.desktop', 'firefox.desktop', 'codium.desktop', 'org.gnome.Settings.desktop']
  ```
 
 
@@ -108,6 +169,9 @@ Codium
 }
 ```
 
+### Future ideas
+
+If there is ever a switch for Ansible, seems good tutorial  https://github.com/diffy0712/arch-boot
 
 </details>
 

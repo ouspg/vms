@@ -18,13 +18,17 @@
     "offline": false,
     "packages": [
         "vim",
+        "curl",
+        "wget",
         "jq",
+        "wezterm",
         "spice-vdagent",
         "docker",
         "git",
         "base-devel",
         "firefox",
-        "grml-zsh-config"
+        "grml-zsh-config",
+        "mesa"
     ],
     "services": ["docker"],
     "profile": "gnome",

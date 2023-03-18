@@ -2,6 +2,13 @@
 # -x for printing commands and variables, -v for commands-only
 set -e
 
+OUTPUT_DIR="output_archlinux"
+
+# Downloading unofficial EDK2 release to be used in build system (no other good option on Mac without self build)
+BASE_URL="https://retrage.github.io/edk2-nightly/bin/"
+
+EFI_RELEASE_FILE="RELEASEAARCH64_QEMU_EFI.fd"
+EFI_RELEASE_SHA256="dc95bf89efecc0275e5a93620a4d51dcdd9e8b6e03555bd7f3c276dae42e58af"
 
 err_report() {
     echo "Build failure on line $1 $2"
@@ -20,11 +27,6 @@ else
     exit 125
 fi
 
-# Downloading unofficial EDK2 release to be used in build system (no other good option on Mac without self build)
-BASE_URL="https://retrage.github.io/edk2-nightly/bin/"
-
-EFI_RELEASE_FILE="RELEASEAARCH64_QEMU_EFI.fd"
-EFI_RELEASE_SHA256="dc95bf89efecc0275e5a93620a4d51dcdd9e8b6e03555bd7f3c276dae42e58af"
 
 if [ ! -f $EFI_RELEASE_FILE ]; then
     wget "$BASE_URL$EFI_RELEASE_FILE"
@@ -40,5 +42,13 @@ fi
 echo "EFI downloaded and verified successfully for AARCH64"
 
 
-export PACKER_LOG=1 # Enable logging of packer
-packer build -var="efi_release_file=$EFI_RELEASE_FILE" archlinux.pkr.hcl 
+# export PACKER_LOG=1 # Enable logging of packer
+packer build -var="efi_release_file=$EFI_RELEASE_FILE" -var="output_dir=$OUTPUT_DIR" archlinux.pkr.hcl 
+
+7z a "$OUTPUT_DIR/archlinuxarm.7zip" "$OUTPUT_DIR/archlinuxarm"
+
+
+# source ./allas_conf -u "$CSC_USER" -p "$UNIX_PROJECT"
+# rclone lsd allas:
+# rclone mkdir allas:archlinuxvms
+# rclone copy archlinuxarm.7zip allas:archlinuxvms/
