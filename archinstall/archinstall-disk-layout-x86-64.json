@@ -1,0 +1,32 @@
+{
+    "/dev/sda": {
+        "partitions": [
+            {
+                "boot": true,
+                "encrypted": false,
+                "filesystem": {
+                    "format": "fat32"
+                },
+                "format": true,
+                "mountpoint": "/boot",
+                "size": "513MiB",
+                "start": "5MiB",
+                "type": "primary"
+            },
+            {
+                "encrypted": false,
+                "filesystem": {
+                    "format": "btrfs",
+                    "options": "compress=zstd:1"
+                },
+                "format": true,
+                "mountpoint": "/",
+                "size": "100%",
+                "start": "518MiB",
+                "type": "primary"
+            }
+        ],
+        "wipe": true
+    }
+}
+
