@@ -36,12 +36,12 @@ WIP
  * p7zip (for compression)
 
  Install with Nix:
- ```sh
- nix-env -iA nixpkgs.qemu nixpkgs.wget nixpkgs.packer  nixpkgs.p7zip
+ ```console
+ nix-env -iA nixpkgs.qemu nixpkgs.wget nixpkgs.packer nixpkgs.p7zip
  ```
 Applications with GUI might be more reasonable to install as `brew casks` instead to save some mental health.
 
-```sh
+```console
 brew install --cask utm
 ```
 
