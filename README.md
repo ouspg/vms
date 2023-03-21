@@ -95,7 +95,7 @@ Rclone usage: https://docs.csc.fi/data/Allas/using_allas/rclone/
 ### Signing
 
 To sign builds manually:
-```
+```console
 gpg --output archlinuxarm.sig --detach-sig archlinuxarm.7zip
 ```
 
