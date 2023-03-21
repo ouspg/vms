@@ -5,7 +5,7 @@ set -e
 OUTPUT_DIR="output_archlinux"
 
 # Downloading unofficial EDK2 release to be used in build system (no other good option on Mac without self build)
-BASE_URL="https://retrage.github.io/edk2-nightly/bin/"
+EFI_BASE_URL="https://retrage.github.io/edk2-nightly/bin/"
 
 EFI_RELEASE_FILE="RELEASEAARCH64_QEMU_EFI.fd"
 EFI_RELEASE_SHA256="dc95bf89efecc0275e5a93620a4d51dcdd9e8b6e03555bd7f3c276dae42e58af"
@@ -29,7 +29,7 @@ fi
 
 
 if [ ! -f $EFI_RELEASE_FILE ]; then
-    wget "$BASE_URL$EFI_RELEASE_FILE"
+    wget "$EFI_BASE_URL$EFI_RELEASE_FILE"
 fi
 
 

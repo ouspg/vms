@@ -23,7 +23,6 @@ flowchart LR
     B --> |Get ISOs|C(Packer builds with archinstall)
 ```
 
-WIP
 
 
 ### Build dependencies (MacOS)
@@ -54,7 +53,7 @@ EDK2 release binary must be downloaded for AARCH64 before the Archboot version o
 
 Unofficial releases have been used: https://retrage.github.io/edk2-nightly/
 
-The build [script](build.sh) automates this process, but likely the checksum needs to be changed manually once per day.
+The build ARM [script](build_arm.sh) automates this process, but likely the checksum needs to be changed manually once per day.
 
 ### Archinstall
 
@@ -68,6 +67,19 @@ Configuration files are found in the [archinstall](archinstall) directory.
 Archinstall is meant for x86_64 architecture. 
 There are some caveats; the GRUB bootloader is installed with hardcoded parameters for x86_64, but systemd-bootctl works well enough.
 We only need to rename the Kernel image from `/boot/loader/entries/` configurations to make the ARM machine UEFI bootable.
+
+### Building
+
+
+For ARM builds, use [build_arm.sh](build_arm.sh).
+```
+bash build_arm.sh # Bash must be used
+```
+
+For `x86_64` builds, use packer directly, for now.
+```console
+packer build -var="output_dir=$OUTPUT_DIR" -only=virtualbox-iso.archlinux archlinux.pkr.hcl 
+```
 
 ## Deployment
 
