@@ -45,6 +45,17 @@ Applications with GUI might be more reasonable to install as `brew casks` instea
 brew install --cask utm
 ```
 
+
+### Pre-processor
+
+Building QEMU images requires the use of corresponding EFI reference implementation.
+We will use the EFI Development Kit by the TianoCore community, aka EDK2 releases.
+EDK2 release binary must be downloaded for AARCH64 before the Archboot version of the Arch Linux ARM can be booted.
+
+Unofficial releases have been used: https://retrage.github.io/edk2-nightly/
+
+The build [script](build.sh) automates this process, but likely the checksum needs to be changed manually once per day.
+
 ### Archinstall
 
 Archinstall automates most of the installation process.
@@ -122,6 +133,7 @@ Any package should be straightforward to install if needed.
 
 Click below to see brief summary of the modifications.
 
+Gnome setting changes cannot be applied automatically at the moment.
 
 <details><summary>Customisations &darr;</summary>
 
