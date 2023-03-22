@@ -47,8 +47,13 @@ packer build -var="efi_release_file=$EFI_RELEASE_FILE" -var="output_dir=$OUTPUT_
 
 7z a "$OUTPUT_DIR/archlinuxarm.7zip" "$OUTPUT_DIR/archlinuxarm"
 
+# Get signature of the build
+# gpg --output archlinuxarm.sig --detach-sig archlinuxarm.7zip
+# gpg --verify archlinuxarm.sig archlinuxarm.7zip
 
+# Publish into Allas in csc.fi
 # source ./allas_conf -u "$CSC_USER" -p "$UNIX_PROJECT"
 # rclone lsd allas:
 # rclone mkdir allas:archlinuxvms
 # rclone copy archlinuxarm.7zip allas:archlinuxvms/
+# rclone copy archlinuxarm.sig allas:archlinuxvms/

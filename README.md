@@ -11,21 +11,30 @@ Supported builds include Arch Linux with Black Arch repositories for
 > **Note**
 > There is a slight difference in the packages between ARM and x86_64, because repositories are different.
 
-The publishing process for the `csc.fi` platform is also documented.
+The publishing process for the `csc.fi` platform is also briefly documented.
 
 As an alternative to popular Kali Linux, Parrot OS and Black Arch virtual machines, we have a bit more lightweight and opinionated virtual machine for teaching purposes.
 
 ## Build process
 
+Below is the example process for ARM architecture.
+For `x86_64` builds, Packer is used directly, for now.
+
 ```mermaid
-flowchart LR
-    A[build.sh] -->|Get EFI firmware| B(Launch Packer)
-    B --> |Get ISOs|C(Packer builds with archinstall)
+sequenceDiagram
+    build_arm.sh->>+build_arm.sh: Initiates ARM build process
+    build_arm.sh->>+build_arm.sh: Downloads EFI firmware
+    build_arm.sh->>+Packer: Launches Packer
+    Packer->>+QEMU: Uploads required files
+    Packer->>+QEMU: Initiates Archinstall script
+    Packer->>+QEMU: Post-install configurations
+    Packer->>+build_arm.sh: Provides built .qcow2 image
+    build_arm.sh->>+build_arm.sh: Compresses the resulting image
 ```
 
 
 
-### Build dependencies (MacOS)
+### Build dependencies 
  
  * QEMU
  * wget
@@ -33,6 +42,7 @@ flowchart LR
  * [UTM](https://mac.getutm.app/) (optional, for improved testing experience)
  * (indirect) [archinstall](https://github.com/archlinux/archinstall)
  * p7zip (for compression)
+ * VirtualBox (for `.ova` x86_64 builds)
 
  Install with Nix:
  ```console
@@ -105,6 +115,8 @@ source allas_conf -u your-csc-username -p your-csc-project-name
 Rclone usage: https://docs.csc.fi/data/Allas/using_allas/rclone/
 
 ### Signing
+
+As good practice, it is recommended to sign the builds and distribute the signature.
 
 To sign builds manually:
 ```console
