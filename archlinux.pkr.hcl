@@ -185,7 +185,7 @@ build {
   provisioner "shell" {
     inline = [
       "arch-chroot /mnt/archinstall pacman -S --noconfirm virtualbox-guest-utils",
-      "arch-chroot /mnt/archinstall modprobe -a vboxguest vboxsf vboxvideo", 
+      // "arch-chroot /mnt/archinstall modprobe -a vboxguest vboxsf vboxvideo",     modprobe fails
       // https://superuser.com/questions/688733/start-a-systemd-service-inside-chroot-from-a-non-systemd-based-rootfs
       "arch-chroot /mnt/archinstall systemctl enable vboxservice" // ??? https://0pointer.de/blog/projects/changing-roots
     ]
