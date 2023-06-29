@@ -88,7 +88,7 @@ bash build_arm.sh # Bash must be used
 
 For `x86_64` builds, use packer directly, for now.
 ```console
-packer build -var="output_dir=$OUTPUT_DIR" -only=virtualbox-iso.archlinux archlinux.pkr.hcl 
+packer build -var="output_dir=$OUTPUT_DIR" -only="virtualbox-iso.archlinux" archlinux.pkr.hcl 
 ```
 
 ## Deployment
