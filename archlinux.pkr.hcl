@@ -66,8 +66,8 @@ source "virtualbox-iso" "archlinux" {
   format = "ova"
   firmware = "efi"
   disk_size = "${var.disk_size}"
-  iso_url = "https://arch.kyberorg.fi/iso/2023.03.01/archlinux-2023.03.01-x86_64.iso"
-  iso_checksum = "file:https://arch.kyberorg.fi/iso/2023.03.01/sha256sums.txt"
+  iso_url = "https://arch.kyberorg.fi/iso/latest/archlinux-x86_64.iso"
+  iso_checksum = "file:https://arch.kyberorg.fi/iso/latest/sha256sums.txt"
   hard_drive_interface = "sata"
   ssh_username = "root"
   ssh_password = "root"
@@ -185,7 +185,7 @@ build {
   provisioner "shell" {
     inline = [
       "arch-chroot /mnt/archinstall pacman -S --noconfirm virtualbox-guest-utils",
-      "arch-chroot /mnt/archinstall modprobe -a vboxguest vboxsf vboxvideo" 
+      "arch-chroot /mnt/archinstall modprobe -a vboxguest vboxsf vboxvideo",     // modprobe fails sometimes?
       // https://superuser.com/questions/688733/start-a-systemd-service-inside-chroot-from-a-non-systemd-based-rootfs
       "arch-chroot /mnt/archinstall systemctl enable vboxservice" // ??? https://0pointer.de/blog/projects/changing-roots
     ]
