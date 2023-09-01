@@ -30,6 +30,9 @@ fi
 
 if [ ! -f $EFI_RELEASE_FILE ]; then
     wget "$EFI_BASE_URL$EFI_RELEASE_FILE"
+    echo "EFI downloaded and verified successfully for AARCH64"
+else
+    echo "Using cached EFI file."
 fi
 
 
@@ -39,11 +42,10 @@ elif [ "$unameOut" == "Linux" ]; then
     echo -n "$EFI_RELEASE_SHA256  $EFI_RELEASE_FILE" | sha256sum -c -
 fi
 
-echo "EFI downloaded and verified successfully for AARCH64"
 
 
 # export PACKER_LOG=1 # Enable logging of packer
-packer build -var="efi_release_file=$EFI_RELEASE_FILE" -var="output_dir=$OUTPUT_DIR" archlinux.pkr.hcl 
+packer build -only="qemu.arch-aarch64" -var="efi_release_file=$EFI_RELEASE_FILE" -var="output_dir=$OUTPUT_DIR" archlinux.pkr.hcl
 
 7z a "$OUTPUT_DIR/archlinuxarm.7zip" "$OUTPUT_DIR/archlinuxarm"
 

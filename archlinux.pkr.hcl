@@ -84,9 +84,9 @@ source "virtualbox-iso" "archlinux" {
 }
 
 source "qemu" "arch-aarch64" {
-  qemu_binary       = "qemu-system-aarch64" // 
-  iso_url           = "https://pkgbuild.com/~tpowa/archboot/iso/aarch64/latest/archboot-2023.03.17-10.06-aarch64.iso"
-  iso_checksum      = "file:https://pkgbuild.com/~tpowa/archboot/iso/aarch64/latest/sha256sum.txt"
+  qemu_binary       = "qemu-system-aarch64" //
+  iso_url           = "https://archboot.com/iso/aarch64/latest/archboot-2023.09.01-09.21-6.2.10-1-aarch64-ARCH-aarch64.iso"
+  iso_checksum      = "sha256:4ad942a2bbde4cc5ca7d5e05dd0653d8f42f4f9639f0a4fd7cd0008c41a5bbcd"
   output_directory  = "${var.output_dir}"
   shutdown_command  = "shutdown -P now"
   disk_size         = "${var.disk_size}M"
@@ -129,8 +129,13 @@ build {
   provisioner "file" {
     source = "files/mirrorlist" # Select closes server to Finland (Denmark for ARM repos)
     destination = "/etc/pacman.d/mirrorlist"
-    only = ["qemu.arch-aarch64"]
+    only = ["qemu.arch-aarch644"]
   }
+  //   provisioner "breakpoint" {
+  //   disable = false
+  //   note    = "this is a breakpoint"
+  // }
+
 
   provisioner "file" {
     source = "archinstall/" # Archinstall script configurations
@@ -139,12 +144,17 @@ build {
   provisioner "shell" {
     script = "keyring-update.sh" // Wait for keyring to update before starting anything
   }
+  provisioner "breakpoint" {
+    disable = false
+    note    = "this is a breakpoint"
+  }
   provisioner "shell" {
     only = ["qemu.arch-aarch64"]
     inline = [
+      "timedatectl set-ntp true", // Archinstall timeouts if not set
       "pacman -Sy archinstall --noconfirm",
-      "rm /dev/loop*", // For some reason these loop devices break archinstall on ARM, we don't need them anyway
-      "archinstall --creds /root/user_credentials.json --conf /root/user_configuration.json --disk_layout /root/archinstall-disk-layout.json --silent"
+      // "rm /dev/loop*", // For some reason these loop devices break archinstall on ARM, we don't need them anyway
+      "python /root/fullarch.py"
       ]
   }
   provisioner "shell" {
@@ -178,7 +188,7 @@ build {
   }
   provisioner "shell" {
     inline = [
-      "sed -i '/^linux.*/c\\linux /Image' /mnt/archinstall/boot/loader/entries/*_linux.conf" // Fix kernel naming for ARM, archinstall does it for x86_64 
+      "sed -i '/^linux.*/c\\linux /Image' /mnt/archinstall/boot/loader/entries/*_linux.conf" // Fix kernel naming for ARM, archinstall does it for x86_64
     ]
     only = ["qemu.arch-aarch64"]
   }
