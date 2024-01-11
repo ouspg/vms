@@ -11,3 +11,5 @@
 output_arch*
 archlinuxarm
 allas_conf
+tmp
+venv

@@ -9,10 +9,15 @@ from archinstall import disk
 from archinstall import models
 from archinstall import locale
 from archinstall import profile
+import platform 
 
 fs_type = disk.FilesystemType("ext4")
-# Virtual drive from Packer
-device_path = Path("/dev/vda")
+# Virtual drive from Packer on ARM/MacOS
+if platform.machine() == "arm64":
+    device_path = Path("/dev/vda")
+else:
+    device_path = Path("/dev/sda")
+
 
 # get the physical disk device
 device = disk.device_handler.get_device(device_path)
@@ -27,8 +32,8 @@ device_modification = disk.DeviceModification(device, wipe=True)
 boot_partition = disk.PartitionModification(
     status=disk.ModificationStatus.Create,
     type=disk.PartitionType.Primary,
-    start=disk.Size(1, disk.Unit.MiB),
-    length=disk.Size(512, disk.Unit.MiB),
+    start=disk.Size(1, disk.Unit.MiB, device.device_info.sector_size),
+    length=disk.Size(512, disk.Unit.MiB, device.device_info.sector_size),
     mountpoint=Path("/boot"),
     fs_type=disk.FilesystemType.Fat32,
     flags=[disk.PartitionFlag.Boot],
@@ -39,8 +44,8 @@ device_modification.add_partition(boot_partition)
 root_partition = disk.PartitionModification(
     status=disk.ModificationStatus.Create,
     type=disk.PartitionType.Primary,
-    start=disk.Size(513, disk.Unit.MiB),
-    length=disk.Size(30, disk.Unit.GB),
+    start=disk.Size(513, disk.Unit.MiB, device.device_info.sector_size),
+    length=disk.Size(30, disk.Unit.GB, device.device_info.sector_size),
     mountpoint=Path("/"),
     fs_type=fs_type,
     mount_options=[],
@@ -59,10 +64,9 @@ fs_handler = disk.FilesystemHandler(disk_config)
 # WARNING: this will potentially format the filesystem and delete all data
 fs_handler.perform_filesystem_operations(show_countdown=False)
 
-mountpoint = Path("/mnt")
+mountpoint = Path("/mnt/archinstall")
 
 testing = []
-multilib = []
 
 locale_config = locale.LocaleConfiguration("us", "en_US", "UTF-8")
 
@@ -73,16 +77,14 @@ with Installer(
     installation.mount_ordered_layout()
     installation.minimal_installation(
         testing=None,
-        multilib=None,
+        multilib=True,
         hostname="archlinux",
         locale_config=locale_config,
     )
     installation.add_bootloader(models.bootloader.Bootloader.Systemd)
     # ntp:true
-    installation.activate_time_syncronization()
+    installation.activate_time_synchronization()
     installation.set_timezone("Europe/Helsinki")
-    installation.minimal_installation(hostname="minimal-arch")
-    installation.add_additional_packages(["nano", "wget", "git"])
 
     # audio
     audio_config = {"audio": "pipewire"}
@@ -98,21 +100,46 @@ with Installer(
     profile.profile_handler.install_profile_config(installation, profile_config)
     installation.set_keyboard_language(locale_config.kb_layout)
     core_packages = [
+        "neovim",
         "vim",
         "curl",
         "wget",
         "jq",
         "wezterm",
-        "spice-vdagent",
+        "ttf-jetbrains-mono-nerd",  # For wezterm glyphs
+        "spice-vdagent",  # UTM/QEMU guest
         "docker",
+        "docker-compose",
         "git",
         "base-devel",
         "firefox",
-        "grml-zsh-config",
         "mesa",
+        "yay"
     ]
-    installation.add_additional_packages(core_packages)
-    services = ["docker"]
+    platform_specific = []
+    if platform.machine() == "arm64":
+        platform_specific + ["archlinuxarm-keyring"]
+    else:
+        platform_specific + ["virtualbox-guest-utils"]
+
+
+    zsh_config = ["grml-zsh-config", "zsh-autosuggestions", "zsh-syntax-highlighting"]
+
+    infosec_tools = [
+        "nmap",
+        "wireshark-qt",
+        "radamsa",
+        "afl",
+    ]
+    crypto_course = [
+        "python-pycryptodome",
+    ]
+
+    total_packages = core_packages + platform_specific + zsh_config + infosec_tools + crypto_course
+    installation.add_additional_packages(total_packages)
+    services = ["docker", "systemd-networkd", "systemd-resolved"]
+    if platform.machine() == "x86_64":
+        services.append("vboxservice")
     installation.enable_service(services)
 
     # arch:arch sudo
@@ -120,6 +147,7 @@ with Installer(
     installation.create_users(user)
     custom_commands = [
         "usermod -aG docker arch",
+        "usermod -aG wireshark arch",
         "curl https://blackarch.org/strap.sh | sh",
     ]
     archinstall.run_custom_user_commands(custom_commands, installation)

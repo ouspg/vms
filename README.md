@@ -3,8 +3,8 @@
 The popularity of ARM-based Macbooks has increased the need for multi-architecture virtual machines in teaching.
 
 This repository contains automated build instructions for custom Arch Linux for multi-platform and multi-architecture.
-Supported builds include Arch Linux with Black Arch repositories for 
-    
+Supported builds include Arch Linux with Black Arch repositories for
+
 * AAarch64 with UTM/QEMU support (Arch Linux ARM)
 * x86_64 with VirtualBox/VMware support (Arch Linux x86_64)
 
@@ -34,8 +34,8 @@ sequenceDiagram
 
 
 
-### Build dependencies 
- 
+### Build dependencies
+
  * QEMU
  * wget
  * [Packer](https://www.packer.io/)
@@ -74,9 +74,26 @@ Configuration files are found in the [archinstall](archinstall) directory.
 
 ### ARM limitations
 
-Archinstall is meant for x86_64 architecture. 
+Archinstall is meant for x86_64 architecture.
 There are some caveats; the GRUB bootloader is installed with hardcoded parameters for x86_64, but systemd-bootctl works well enough.
 We only need to rename the Kernel image from `/boot/loader/entries/` configurations to make the ARM machine UEFI bootable.
+
+**Debug environment for Python `archinstall` script**
+
+Create `docker` image from
+```bash
+curl -OL http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
+```
+And import
+```
+cat ArchLinuxARM*.tar.gz | podman import - archlinuxarm
+```
+Update keyring
+
+```bash
+pacman-key --populate archlinuxarm
+```
+
 
 ### Building
 
@@ -88,7 +105,7 @@ bash build_arm.sh # Bash must be used
 
 For `x86_64` builds, use packer directly, for now.
 ```console
-packer build -var="output_dir=$OUTPUT_DIR" -only="virtualbox-iso.archlinux" archlinux.pkr.hcl 
+packer build -var="output_dir=$OUTPUT_DIR" -only="virtualbox-iso.archlinux" archlinux.pkr.hcl
 ```
 
 ## Deployment
@@ -140,7 +157,7 @@ See for ARM
 
 ### UTM
 
-To get the best out of UTM, enable `retina` support, select GPU accelerated display driver, e.g. `virtio-gpu-gl-pci`, and scale Gnome to 200% for an improved GUI experience. 
+To get the best out of UTM, enable `retina` support, select GPU accelerated display driver, e.g. `virtio-gpu-gl-pci`, and scale Gnome to 200% for an improved GUI experience.
 
 However, GPU acceleration should be disabled (use `virtio-gpu-pci`) if the browser must be used inside the guest VM, for now.
   * https://github.com/utmapp/UTM/issues/4983
@@ -152,7 +169,7 @@ However, GPU acceleration should be disabled (use `virtio-gpu-pci`) if the brows
 ## Customisation
 
 The virtual machines will include all regular Arch Linux repositories,
-including `AUR` and `Black Arch` repositories. 
+including `AUR` and `Black Arch` repositories.
 Any package should be straightforward to install if needed.
 
 Click below to see brief summary of the modifications.
@@ -187,7 +204,7 @@ gsettings set org.gnome.shell favorite-apps
  ```
 
 
- [yay](https://github.com/Jguer/yay) is included in `blackarch-misc`. 
+ [yay](https://github.com/Jguer/yay) is included in `blackarch-misc`.
  Hurray! -> `pacman -S yay`
 
 
@@ -211,3 +228,61 @@ If there is ever a switch for Ansible, seems good tutorial  https://github.com/d
 
 </details>
 
+### Issues
+
+Audio packages must be installed before Gnome. Otherwise, pipewire and pulse will conflict.
+Root partition needs mountpoint `/`
+
+
+### Boot Linux Kernel from UEFI shell
+
+Change to the correct directory:
+
+`fs0:`
+
+The need for booting from UEFI Shell might arise if the kernel parameters or something else is incorrect, and there is a need to find the correct ones.
+
+Default parameters are located in `/loader/entries`
+Modify the default parameters with `edit` command.
+When building `ARM` version with `archinstall` script, the name of the kernel image might be wrong. It should be changed to `/Image`.
+
+```shell
+bcfg boot add 0 fsX:\loader\entries\your_entry_file.conf "Arch Linux"
+```
+
+Reset with `reset` command.
+
+### To fix BlackArch keyring issues
+
+Either https://blackarch.org/faq.html#collapseFour
+
+or
+
+```bash
+sudo pacman -Syu
+sudo echo F9A6E68A711354D84A9B91637533BAFE69A25079:4: >> /usr/share/pacman/keyring/blackarch-trusted
+sudo pacman-key --init
+sudo pacman-key --populate archlinuxarm blackarch
+sudo pacman -Syu
+```
+
+https://github.com/BlackArch/blackarch/issues/4034
+
+
+Manually sign Arch Linux ARM builder key (Weak key because of SHA1?)
+
+```
+pacman-key --lsign-key 68B3537F39A313B3E574D06777193F152BDBE6A6
+```
+
+
+## Network issues
+
+Start `systemd-networkd` and `systemd-resolved`
+
+
+## Package specific
+
+Arch Linux AUR `dieharder`` not maintained anymore, upstream repo deleted.
+
+Install from: https://github.com/eddelbuettel/dieharder

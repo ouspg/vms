@@ -45,7 +45,7 @@ fi
 
 
 # export PACKER_LOG=1 # Enable logging of packer
-packer build -only="qemu.arch-aarch64" -var="efi_release_file=$EFI_RELEASE_FILE" -var="output_dir=$OUTPUT_DIR" archlinux.pkr.hcl
+packer build -only="qemu.arch-aarch64" -on-error=ask -var="efi_release_file=$EFI_RELEASE_FILE" -var="output_dir=$OUTPUT_DIR" archlinux.pkr.hcl
 
 7z a "$OUTPUT_DIR/archlinuxarm.7zip" "$OUTPUT_DIR/archlinuxarm"
 
@@ -57,5 +57,10 @@ packer build -only="qemu.arch-aarch64" -var="efi_release_file=$EFI_RELEASE_FILE"
 # source ./allas_conf -u "$CSC_USER" -p "$UNIX_PROJECT"
 # rclone lsd allas:
 # rclone mkdir allas:archlinuxvms
-# rclone copy archlinuxarm.7zip allas:archlinuxvms/
-# rclone copy archlinuxarm.sig allas:archlinuxvms/
+# rclone copy --progress archlinuxarm.7zip allas:archlinuxvms/
+# rclone copy --progress archlinuxarm.sig allas:archlinuxvms/
+
+# For x86_64
+
+# rclone copy --progress archlinux-x86_64.ova allas:archlinuxvms/
+# rclone copy --progress archlinux-x86_64.sig allas:archlinuxvms/

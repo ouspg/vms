@@ -5,6 +5,10 @@ packer {
       version = ">= 1.0.1"
       source = "github.com/hashicorp/virtualbox"
     }
+    qemu = {
+      version = "~> 1"
+      source  = "github.com/hashicorp/qemu"
+    }
   }
 }
 
@@ -126,11 +130,11 @@ build {
   sources = ["source.qemu.arch-aarch64", "sources.virtualbox-iso.archlinux"]
 
 
-  provisioner "file" {
-    source = "files/mirrorlist" # Select closes server to Finland (Denmark for ARM repos)
-    destination = "/etc/pacman.d/mirrorlist"
-    only = ["qemu.arch-aarch644"]
-  }
+  // provisioner "file" {
+  //   source = "files/mirrorlist" # Select closes server to Finland (Denmark for ARM repos)
+  //   destination = "/etc/pacman.d/mirrorlist"
+  //   only = ["qemu.arch-aarch644"]
+  // }
   //   provisioner "breakpoint" {
   //   disable = false
   //   note    = "this is a breakpoint"
@@ -141,29 +145,45 @@ build {
     source = "archinstall/" # Archinstall script configurations
     destination = "/root/"
   }
-  provisioner "shell" {
-    script = "keyring-update.sh" // Wait for keyring to update before starting anything
-  }
-  provisioner "breakpoint" {
-    disable = false
-    note    = "this is a breakpoint"
-  }
+  
   provisioner "shell" {
     only = ["qemu.arch-aarch64"]
     inline = [
-      "timedatectl set-ntp true", // Archinstall timeouts if not set
-      "pacman -Sy archinstall --noconfirm",
-      // "rm /dev/loop*", // For some reason these loop devices break archinstall on ARM, we don't need them anyway
+      "timedatectl set-ntp true", // Archinstall timeouts if not set on MacOS/ARM
+      "pacman -Sy --needed archinstall --noconfirm",
+      ]
+  }
+  provisioner "breakpoint" {
+    disable = false 
+    note    = "Archinstall deps installed"
+  }
+  
+  provisioner "shell" {
+    // only = ["qemu.arch-aarch64"]
+    inline = [
       "python /root/fullarch.py"
       ]
   }
-  provisioner "shell" {
-    only = ["virtualbox-iso.archlinux"]
-    inline = [
-      "pacman -Sy --needed archinstall --noconfirm",
-      "archinstall --creds /root/user_credentials.json --conf /root/user_configuration.json --disk_layout /root/archinstall-disk-layout-x86-64.json --silent"
-      ]
+  
+  provisioner "breakpoint" {
+    disable = false 
+    note    = "Archinstall completed"
   }
+
+  provisioner "file" {
+    source = "dotfiles/.wezterm.lua" 
+    destination = "/mnt/archinstall/home/${var.user}/.wezterm.lua"
+  }
+
+  provisioner "file" {
+    source = "dotfiles/20-wired.network" 
+    destination = "/mnt/archinstall/etc/systemd/network/20-wired.network"
+  }
+  provisioner "file" {
+    source = "dotfiles/zsh_extensions.zsh" 
+    destination = "/mnt/archinstall/tmp/zsh_extensions.zsh"
+  }
+
 
   provisioner "breakpoint" {
     disable = false
@@ -171,12 +191,28 @@ build {
   }
   // Archinstall will mount the filesystem in /mnt/archinstall by default
   provisioner "shell" {
+    inline = [
+      "sed -i '/^linux.*/c\\linux /Image' /mnt/archinstall/boot/loader/entries/*_linux.conf", // Fix kernel naming for ARM, archinstall does it for x86_64
+      "echo F9A6E68A711354D84A9B91637533BAFE69A25079:4: >> /mnt/archinstall/usr/share/pacman/keyrings/blackarch-trusted",
+      "arch-chroot /mnt/archinstall pacman-key --init",
+      "arch-chroot /mnt/archinstall pacman-key --populate archlinuxarm blackarch",
+      "arch-chroot /mnt/archinstall pacman-key --lsign-key 68B3537F39A313B3E574D06777193F152BDBE6A6", // Arch Linux ARM Build key
+      "arch-chroot /mnt/archinstall pacman -Syu"
+    ]
+    only = ["qemu.arch-aarch64"]
+  }
+  provisioner "breakpoint" {
+    disable = false
+    note    = "Keyring works"
+  }
+  
+  provisioner "shell" {
     max_retries = 3 // There is timeout for sudo use, too lazy to make builder use for yay
     inline = [
-      "arch-chroot /mnt/archinstall pacman -S yay --noconfirm",
-      "arch-chroot /mnt/archinstall bash -c 'su arch -c \"echo arch | yay --sudoflags=-S -S vscodium-bin --noconfirm\"'", // Maybe we need Ansible after all
+      "arch-chroot /mnt/archinstall bash -c 'su arch -c \"echo arch | yay --sudoflags=-S -S visual-studio-code-bin --noconfirm\"'", // Maybe we need Ansible after all
       "arch-chroot /mnt/archinstall su ${var.user} -c 'touch /home/${var.user}/.zshrc'", //We have grml configuration as we are lazy
       "arch-chroot /mnt/archinstall chsh -s /bin/zsh ${var.user}",
+      "arch-chroot /mnt/archinstall su ${var.user} -c 'cat /tmp/zsh_extensions.zsh >> /home/${var.user}/.zshrc'"
       // "arch-chroot /mnt/archinstall sudo -u arch dbus-launch --exit-with-session gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'fi'), ('xkb', 'us')]\"", // Add Finnish keyboard layout, quotes not allowed around array, dbus use required
       // "arch-chroot /mnt/archinstall sudo -u arch dbus-launch --exit-with-session gsettings set org.gnome.shell favorite-apps \"['org.gnome.Nautilus.desktop', 'org.wezfurlong.wezterm.desktop', 'firefox.desktop', 'codium.desktop', 'org.gnome.Settings.desktop']\"", // Add favorite apps to Gnome Shell
       // Difficult... https://unix.stackexchange.com/questions/687514/how-to-change-dconf-settings-in-chrooted-mode-via-terminal
@@ -185,20 +221,5 @@ build {
       ]
 // gsettings set org.gnome.desktop.background picture-options 'centered'
 // gsettings set org.gnome.desktop.background picture-uri "${URI}"
-  }
-  provisioner "shell" {
-    inline = [
-      "sed -i '/^linux.*/c\\linux /Image' /mnt/archinstall/boot/loader/entries/*_linux.conf" // Fix kernel naming for ARM, archinstall does it for x86_64
-    ]
-    only = ["qemu.arch-aarch64"]
-  }
-  provisioner "shell" {
-    inline = [
-      "arch-chroot /mnt/archinstall pacman -S --noconfirm virtualbox-guest-utils",
-      "arch-chroot /mnt/archinstall modprobe -a vboxguest vboxsf vboxvideo",     // modprobe fails sometimes?
-      // https://superuser.com/questions/688733/start-a-systemd-service-inside-chroot-from-a-non-systemd-based-rootfs
-      "arch-chroot /mnt/archinstall systemctl enable vboxservice" // ??? https://0pointer.de/blog/projects/changing-roots
-    ]
-    only = ["virtualbox-iso.archlinux"]
   }
 }
