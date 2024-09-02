@@ -50,6 +50,10 @@ variable "user" {
   type    = string
   default = "arch"
 }
+variable "dotfiles_dir" {
+  type    = string
+  default = "dotfiles"
+}
 
 variable "accelerator" { // Modify on Linux builders to kvm
   type    = string
@@ -145,7 +149,7 @@ build {
     source = "archinstall/" # Archinstall script configurations
     destination = "/root/"
   }
-  
+
   provisioner "shell" {
     only = ["qemu.arch-aarch64"]
     inline = [
@@ -154,34 +158,41 @@ build {
       ]
   }
   provisioner "breakpoint" {
-    disable = false 
+    only = ["qemu.arch-aarch64"]
+    disable = false
     note    = "Archinstall deps installed"
   }
-  
+
   provisioner "shell" {
     // only = ["qemu.arch-aarch64"]
     inline = [
       "python /root/fullarch.py"
       ]
   }
-  
+
   provisioner "breakpoint" {
-    disable = false 
+    disable = false
     note    = "Archinstall completed"
   }
 
   provisioner "file" {
-    source = "dotfiles/.wezterm.lua" 
+    source = "dotfiles/.wezterm.lua"
     destination = "/mnt/archinstall/home/${var.user}/.wezterm.lua"
   }
 
   provisioner "file" {
-    source = "dotfiles/20-wired.network" 
+    source = "dotfiles/20-wired.network"
     destination = "/mnt/archinstall/etc/systemd/network/20-wired.network"
   }
+  provisioner "shell" {
+    inline = [
+    "mkdir -p /mnt/archinstall/${var.dotfiles_dir}"
+    ]
+  }
+
   provisioner "file" {
-    source = "dotfiles/zsh_extensions.zsh" 
-    destination = "/mnt/archinstall/tmp/zsh_extensions.zsh"
+    source = "dotfiles/zsh_extensions.zsh"
+    destination = "/mnt/archinstall/${var.dotfiles_dir}/zsh_extensions.zsh"
   }
 
 
@@ -205,14 +216,13 @@ build {
     disable = false
     note    = "Keyring works"
   }
-  
+
   provisioner "shell" {
     max_retries = 3 // There is timeout for sudo use, too lazy to make builder use for yay
     inline = [
-      "arch-chroot /mnt/archinstall bash -c 'su arch -c \"echo arch | yay --sudoflags=-S -S visual-studio-code-bin --noconfirm\"'", // Maybe we need Ansible after all
       "arch-chroot /mnt/archinstall su ${var.user} -c 'touch /home/${var.user}/.zshrc'", //We have grml configuration as we are lazy
       "arch-chroot /mnt/archinstall chsh -s /bin/zsh ${var.user}",
-      "arch-chroot /mnt/archinstall su ${var.user} -c 'cat /tmp/zsh_extensions.zsh >> /home/${var.user}/.zshrc'"
+      "arch-chroot /mnt/archinstall su ${var.user} -c 'cat ${var.dotfiles_dir}/zsh_extensions.zsh >> /home/${var.user}/.zshrc'",
       // "arch-chroot /mnt/archinstall sudo -u arch dbus-launch --exit-with-session gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'fi'), ('xkb', 'us')]\"", // Add Finnish keyboard layout, quotes not allowed around array, dbus use required
       // "arch-chroot /mnt/archinstall sudo -u arch dbus-launch --exit-with-session gsettings set org.gnome.shell favorite-apps \"['org.gnome.Nautilus.desktop', 'org.wezfurlong.wezterm.desktop', 'firefox.desktop', 'codium.desktop', 'org.gnome.Settings.desktop']\"", // Add favorite apps to Gnome Shell
       // Difficult... https://unix.stackexchange.com/questions/687514/how-to-change-dconf-settings-in-chrooted-mode-via-terminal

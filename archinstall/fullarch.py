@@ -9,7 +9,7 @@ from archinstall import disk
 from archinstall import models
 from archinstall import locale
 from archinstall import profile
-import platform 
+import platform
 
 fs_type = disk.FilesystemType("ext4")
 # Virtual drive from Packer on ARM/MacOS
@@ -93,34 +93,38 @@ with Installer(
     # Gnome desktop
     profile_config = {
         "gfx_driver": "",
-        "greeter": "gdm",
-        "profile": {"details": ["Gnome"], "main": "Desktop"},
+        "greeter": "sddm",
+        "profile": {"details": ["KDE Plasma"], "main": "Desktop"},
     }
     profile_config = profile.ProfileConfiguration.parse_arg(profile_config)
     profile.profile_handler.install_profile_config(installation, profile_config)
     installation.set_keyboard_language(locale_config.kb_layout)
     core_packages = [
+        # Editors
         "neovim",
         "vim",
+        "code",
+        # Core
+        "firefox",
         "curl",
         "wget",
         "jq",
+        "git",
+        "base-devel",
+        # Terminal-related
         "wezterm",
         "ttf-jetbrains-mono-nerd",  # For wezterm glyphs
+        # Virtualization/Containers
         "spice-vdagent",  # UTM/QEMU guest
         "docker",
         "docker-compose",
-        "git",
-        "base-devel",
-        "firefox",
-        "mesa",
-        "yay"
+        "mesa"
     ]
     platform_specific = []
     if platform.machine() == "arm64":
-        platform_specific + ["archlinuxarm-keyring"]
+        platform_specific = ["archlinuxarm-keyring"]
     else:
-        platform_specific + ["virtualbox-guest-utils"]
+        platform_specific = ["virtualbox-guest-utils"]
 
 
     zsh_config = ["grml-zsh-config", "zsh-autosuggestions", "zsh-syntax-highlighting"]
@@ -146,8 +150,12 @@ with Installer(
     user = models.User("arch", "arch", True)
     installation.create_users(user)
     custom_commands = [
+        # Aur helper
+        # "pacman -S --needed git base-devel && git clone https://aur.archlinux.org/yay-bin.git && cd yay-bin && makepkg -si",
+        # Permissions
         "usermod -aG docker arch",
         "usermod -aG wireshark arch",
+        # Blackarch repos
         "curl https://blackarch.org/strap.sh | sh",
     ]
     archinstall.run_custom_user_commands(custom_commands, installation)
