@@ -8,7 +8,7 @@ OUTPUT_DIR="output_archlinux"
 EFI_BASE_URL="https://retrage.github.io/edk2-nightly/bin/"
 
 EFI_RELEASE_FILE="RELEASEAARCH64_QEMU_EFI.fd"
-EFI_RELEASE_SHA256="dc95bf89efecc0275e5a93620a4d51dcdd9e8b6e03555bd7f3c276dae42e58af"
+EFI_RELEASE_SHA256="2b77642151be6a303232d2bcee071a868758a10caa313d99c8f94a26ff60a347"
 
 err_report() {
     echo "Build failure on line $1 $2"

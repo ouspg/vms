@@ -93,8 +93,8 @@ source "virtualbox-iso" "archlinux" {
 
 source "qemu" "arch-aarch64" {
   qemu_binary       = "qemu-system-aarch64" //
-  iso_url           = "https://archboot.com/iso/aarch64/latest/archboot-2023.09.01-09.21-6.2.10-1-aarch64-ARCH-aarch64.iso"
-  iso_checksum      = "sha256:4ad942a2bbde4cc5ca7d5e05dd0653d8f42f4f9639f0a4fd7cd0008c41a5bbcd"
+  iso_url           = "https://release.archboot.de/aarch64/latest/iso/archboot-2024.09.01-02.43-6.10.7-1-aarch64-ARCH-aarch64.iso"
+  iso_checksum      = "sha256:9f55ac045c66289d5616fb0f0c98eb6ac9718705a56aa9d1e99a1a1112d95957"
   output_directory  = "${var.output_dir}"
   shutdown_command  = "shutdown -P now"
   disk_size         = "${var.disk_size}M"
@@ -104,8 +104,10 @@ source "qemu" "arch-aarch64" {
   accelerator       = "hvf" // Does not work for some reason in Mac!
   // http_directory    = "http"
   ssh_username      = "root"
-  ssh_password      = ""
+  ssh_port          = "11838"
   ssh_timeout       = "10m"
+  // check archboot.com for decrypting the key (currently: Archboot)
+  ssh_private_key_file = "build_key.pem"
   vm_name           = "archlinuxarm"
   net_device        = "virtio-net"
   disk_interface    = "virtio"
@@ -133,33 +135,36 @@ source "qemu" "arch-aarch64" {
 build {
   sources = ["source.qemu.arch-aarch64", "sources.virtualbox-iso.archlinux"]
 
-
-  // provisioner "file" {
-  //   source = "files/mirrorlist" # Select closes server to Finland (Denmark for ARM repos)
-  //   destination = "/etc/pacman.d/mirrorlist"
-  //   only = ["qemu.arch-aarch644"]
-  // }
-  //   provisioner "breakpoint" {
-  //   disable = false
-  //   note    = "this is a breakpoint"
-  // }
-
+  provisioner "breakpoint" {
+    only = ["qemu.arch-aarch64"]
+    disable = true
+    note    = "Ready to start Archinstall on ARM"
+  }
 
   provisioner "file" {
     source = "archinstall/" # Archinstall script configurations
     destination = "/root/"
   }
 
+  provisioner "file" {
+    only = ["qemu.arch-aarch64"]
+    source = "files/mirrorlist" # Select closes server to Finland (Denmark for ARM repos)
+    destination = "/etc/pacman.d/mirrorlist"
+  }
+
   provisioner "shell" {
     only = ["qemu.arch-aarch64"]
     inline = [
       "timedatectl set-ntp true", // Archinstall timeouts if not set on MacOS/ARM
-      "pacman -Sy --needed archinstall --noconfirm",
+      // gnupg and systemd have been only partially instealld for archboot...
+      "pacman -Sy archinstall systemd gnupg --noconfirm",
+      "systemctl start archlinux-keyring-wkd-sync.timer",
       ]
   }
+
   provisioner "breakpoint" {
     only = ["qemu.arch-aarch64"]
-    disable = false
+    disable = true
     note    = "Archinstall deps installed"
   }
 
@@ -204,11 +209,11 @@ build {
   provisioner "shell" {
     inline = [
       "sed -i '/^linux.*/c\\linux /Image' /mnt/archinstall/boot/loader/entries/*_linux.conf", // Fix kernel naming for ARM, archinstall does it for x86_64
-      "echo F9A6E68A711354D84A9B91637533BAFE69A25079:4: >> /mnt/archinstall/usr/share/pacman/keyrings/blackarch-trusted",
-      "arch-chroot /mnt/archinstall pacman-key --init",
-      "arch-chroot /mnt/archinstall pacman-key --populate archlinuxarm blackarch",
-      "arch-chroot /mnt/archinstall pacman-key --lsign-key 68B3537F39A313B3E574D06777193F152BDBE6A6", // Arch Linux ARM Build key
-      "arch-chroot /mnt/archinstall pacman -Syu"
+      // "echo F9A6E68A711354D84A9B91637533BAFE69A25079:4: >> /mnt/archinstall/usr/share/pacman/keyrings/blackarch-trusted",
+      // "arch-chroot /mnt/archinstall pacman-key --init",
+      // "arch-chroot /mnt/archinstall pacman-key --populate archlinuxarm blackarch",
+      // "arch-chroot /mnt/archinstall pacman-key --lsign-key 68B3537F39A313B3E574D06777193F152BDBE6A6", // Arch Linux ARM Build key
+      // "arch-chroot /mnt/archinstall pacman -Syu"
     ]
     only = ["qemu.arch-aarch64"]
   }

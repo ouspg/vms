@@ -13,7 +13,8 @@ import platform
 
 fs_type = disk.FilesystemType("ext4")
 # Virtual drive from Packer on ARM/MacOS
-if platform.machine() == "arm64":
+print(f"Detected machine: {platform.machine()}")
+if platform.machine() == "aarch64":
     device_path = Path("/dev/vda")
 else:
     device_path = Path("/dev/sda")
@@ -70,11 +71,15 @@ testing = []
 
 locale_config = locale.LocaleConfiguration("us", "en_US", "UTF-8")
 
+
+# If stuck on keyring sync, check that timer service is running: systemctl status archlinux-keyring-wkd-sync.timer
+
 with Installer(
     mountpoint, disk_config, disk_encryption=None, kernels=["linux"]
 ) as installation:
     installation.sanity_check()
     installation.mount_ordered_layout()
+    # Keyboard config can sometimes fail on ARM, because it is changing it too fast (systemd-nspawn process not spawned yet)
     installation.minimal_installation(
         testing=None,
         multilib=True,
@@ -103,7 +108,8 @@ with Installer(
         # Editors
         "neovim",
         "vim",
-        "code",
+        # VS Code build does not exist for ARM
+        # "code",
         # Core
         "firefox",
         "curl",
@@ -121,7 +127,7 @@ with Installer(
         "mesa"
     ]
     platform_specific = []
-    if platform.machine() == "arm64":
+    if platform.machine() == "aarch64":
         platform_specific = ["archlinuxarm-keyring"]
     else:
         platform_specific = ["virtualbox-guest-utils"]
