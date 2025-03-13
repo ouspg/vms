@@ -1,0 +1,97 @@
+---
+- name: Install packages
+  hosts: all
+  vars:
+    dotfiles_dir: "dotfiles"
+    ansible_become_password: "arch"
+  become: true
+  tasks:
+
+# segments are marked in case code needs to be divided later.
+
+# segment
+
+    # packages are installed in 3 parts because one command had a chance to throw errors
+
+    - name: update system
+      ansible.builtin.command: pacman -Syu --noconfirm
+
+    - name: install packages 1
+      ansible.builtin.command: pacman -Syu --noconfirm neovim vim firefox curl wget jq git
+      retries: 3
+
+    - name: install packages 2
+      ansible.builtin.command: pacman -Sy --noconfirm base-devel wezterm ttf-jetbrains-mono-nerd spice-vdagent docker docker-compose
+      retries: 3
+
+    - name: install packages 3
+      ansible.builtin.command: pacman -Sy --noconfirm mesa nmap wireshark-qt radamsa afl python-pycryptodome zsh 
+      retries: 3
+
+    - name: Add BlackArch repository
+      ansible.builtin.shell:
+       echo "[blackarch]" >> /etc/pacman.conf
+       echo bash -c 'echo -e "[blackarch]\nServer = https://blackarch.mirror.evilcorp.xyz/blackarch/\$repo/os/\$arch" >> /etc/pacman.conf'
+       pacman -Syy
+       pacman-key --init
+       pacman-key --populate blackarch
+       pacman -Syu --noconfirm
+
+    - name: install virtualbox
+      ansible.builtin.command: pacman -Sy virtualbox virtualbox-host-modules-arch --noconfirm
+
+    - name: install utils
+      ansible.builtin.command: sudo pacman -Sy virtualbox-guest-utils --noconfirm
+
+    - name: Enable system services
+      ansible.builtin.command: systemctl enable docker 
+
+    - name: Enable VirtualBox service
+      ansible.builtin.command: systemctl enable vboxservice
+      when: ansible_architecture == "x86_64"
+
+    - name: Ensure docker group exists
+      group:
+        name: docker
+        state: present
+
+    - name: Ensure wireshark group exists
+      group:
+        name: wireshark
+        state: present
+
+    - name: Add arch user to groups
+      ansible.builtin.user:
+        name: "arch"
+        groups: "docker,wireshark"
+        append: yes
+
+# segment
+
+  #  - name: Set max retries for sudo use timeout
+ #    shell: echo "Max retries set to 3"  # This is just a placeholder as max_retries is a Packer setting
+
+    - name: Create .zshrc for user
+      ansible.builtin.command: /bin/bash -c 'su - arch -c "touch ~/.zshrc"'
+
+    - name: Change shell to zsh
+      ansible.builtin.command:  chsh -s /bin/zsh arch
+
+    - name: Append zsh extensions to .zshrc
+      ansible.builtin.command: /bin/bash -c 'su - arch -c "cat /dotfiles/zsh_extensions.zsh >> /home/arch/.zshrc"'
+
+    - name: Clear pacman cache
+      ansible.builtin.command: pacman -Scc --noconfirm
+
+    # The following tasks remain commented but included for reference:
+    # - name: Set Finnish keyboard layout
+    #   shell: arch-chroot /mnt/archinstall sudo -u arch dbus-launch --exit-with-session gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'fi'), ('xkb', 'us')]"
+    
+    # - name: Set favorite apps in Gnome Shell
+    #   shell: arch-chroot /mnt/archinstall sudo -u arch dbus-launch --exit-with-session gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'org.wezfurlong.wezterm.desktop', 'firefox.desktop', 'codium.desktop', 'org.gnome.Settings.desktop']"
+    
+    # - name: Set desktop background options
+    #   shell: gsettings set org.gnome.desktop.background picture-options 'centered'
+    
+    # - name: Set desktop background image
+    #   shell: gsettings set org.gnome.desktop.background picture-uri "${URI}"

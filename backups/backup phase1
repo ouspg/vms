@@ -1,0 +1,155 @@
+---
+- name: Install base arch and bootloader
+  hosts: all
+  vars:
+    dotfiles_dir: "dotfiles"
+  become: true
+  tasks:
+        
+        
+    - name: Set system time and date
+      ansible.builtin.command: timedatectl
+
+    - name: Initialize pacman keyring
+      ansible.builtin.command: pacman-key --init
+
+    - name: Populate pacman keyring
+      ansible.builtin.command: pacman-key --populate
+
+    - name: Install Arch Linux base system
+      ansible.builtin.command: pacstrap /mnt base linux linux-firmware
+
+    - name: Output pacstrap result
+      debug:
+        var: pacstrap_result
+
+    - name: Generate fstab
+      ansible.builtin.command: "bash -c 'genfstab -U /mnt >> /mnt/etc/fstab'"
+
+
+    # segment
+
+    - name: Install nano
+      ansible.builtin.command: arch-chroot /mnt pacman -Sy nano --noconfirm
+
+    - name: Install systemd-boot
+      ansible.builtin.command: arch-chroot /mnt bootctl install
+
+    - name: Ensure loader directory exists
+      ansible.builtin.command: arch-chroot /mnt mkdir -p /boot/loader/entries
+
+    - name: Create arch.conf
+      ansible.builtin.copy:
+        dest: /mnt/boot/loader/entries/arch.conf
+        content: |
+          title   Arch Linux
+          linux   vmlinuz-linux
+          initrd  initramfs-linux.img
+          options root=/dev/sda2 rw
+
+    - name: Remove /boot/ prefix if it appears in arch.conf
+      ansible.builtin.command: arch-chroot /mnt sed -i 's|/boot/||g' /boot/loader/entries/arch.conf
+# sed -i 's|/boot/||g' /mnt/boot/loader/entries/arch.conf
+
+    - name: Create loader.conf
+      ansible.builtin.copy:
+        dest: /mnt/boot/loader/loader.conf
+        content: |
+          default arch
+          timeout 3
+          editor 0
+
+# segment
+
+    # pacman keys need to be done twice for some reason. once before pacstrap and once before installing anything.
+    - name: Initialize pacman keyring
+      ansible.builtin.command: arch-chroot /mnt pacman-key --init
+
+    - name: Populate pacman keyring with Arch Linux keys
+      ansible.builtin.command: arch-chroot /mnt pacman-key --populate archlinux
+
+    - name: Refresh pacman keys
+      ansible.builtin.command: arch-chroot /mnt pacman-key --refresh-keys
+
+    - name: Set correct permissions for pacman keyring directory
+      ansible.builtin.command: arch-chroot /mnt chmod 700 /etc/pacman.d/gnupg
+
+    - name: Ensure correct ownership for pacman keyring directory
+      ansible.builtin.command: arch-chroot /mnt chown -R root:root /etc/pacman.d/gnupg
+
+    - name: update system
+      ansible.builtin.command: arch-chroot /mnt pacman -Syu --noconfirm
+
+    - name: install sudo
+      ansible.builtin.command: arch-chroot /mnt pacman -S sudo --noconfirm
+
+# segment
+
+    - name: create arch user
+      ansible.builtin.command: arch-chroot /mnt useradd -m -G wheel arch
+      
+    - name: password
+      ansible.builtin.command: arch-chroot /mnt sh -c 'echo "arch:arch" | chpasswd'
+    
+    - name: Allow sudo for wheel group
+      ansible.builtin.copy:
+        content: "%wheel ALL=(ALL) ALL"
+        dest: "/mnt/etc/sudoers.d/wheel"
+        mode: 0440
+
+    - name: pacman -Sy
+      ansible.builtin.command: arch-chroot /mnt pacman -Sy
+
+# segment
+
+
+    - name: Create user home directory if not exists
+      ansible.builtin.file:
+        path: "/mnt/home/arch"
+        state: directory
+        mode: '0755'
+
+    - name: Copy wezterm.lua to user home
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/dotfiles/wezterm.lua"
+        dest: "/mnt/home/arch/.wezterm.lua"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create systemd network directory if not exists
+      ansible.builtin.file:
+        path: "/mnt/etc/systemd/network"
+        state: directory
+        mode: '0755'
+
+    - name: Copy 20-wired.network file to systemd network config
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/dotfiles/20-wired.network"
+        dest: "/mnt/etc/systemd/network/20-wired.network"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create dotfiles directory if not exists
+      ansible.builtin.file:
+        path: "/mnt/{{ dotfiles_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy zsh extensions file
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/dotfiles/zsh_extensions.zsh"
+        dest: "/mnt/{{ dotfiles_dir }}/zsh_extensions.zsh"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: NetworkManager
+      ansible.builtin.command: arch-chroot /mnt pacman -Sy --noconfirm networkmanager openssh
+
+    - name: Enable system services
+      ansible.builtin.command: arch-chroot /mnt systemctl enable systemd-networkd systemd-resolved NetworkManager sshd
+
+    - name: install python
+      ansible.builtin.command: arch-chroot /mnt sudo pacman -Sy --noconfirm python

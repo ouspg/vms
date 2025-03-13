@@ -1,0 +1,36 @@
+Guide to using this project
+
+step 1. permissions for files. 
+
+you need to give .hcl .py and .sh files in this current directory and its sub directories permissions to run on your operating system. easiest way is "chmod 755 permissions.sh" but this can also be done manually.
+
+step2 dependencies
+
+packer
+python3
+python3-pip
+python-passlib
+ansible
+ansible community general
+virtualbox
+
+if you want all of these to be installed on your computer automatically please run dependencies.sh
+note that this may not work for all computers since configurations may vary. script will not install virtualbox and its dependencies.
+
+step 3 initialize files
+
+you have to run "packer init packer_phase1.pkr.hcl" and "packer init packer_phase2.pkr.hcl"
+
+this will install reguired plugins for packer to run the files
+
+step 4 running the project
+
+there are two ways you can do this. first is to run create_arch.py with "./create_arch.py" this will run both packer files one after the other and reguires no user input unless errors occur or the other option is to run the .hcl files yourself manually by doing "packer build packer_phase1.pkr.hcl" and "packer build packer_phase2.pkr.hcl"
+
+step 5 finished
+
+once finished the final file will be in output-archlinux2 as a file named archlinux-x86_64.ova
+
+
+
+

@@ -1,0 +1,116 @@
+---
+- name: Install packages
+  hosts: all
+  vars:
+    dotfiles_dir: "dotfiles"
+    ansible_become_password: "arch"
+  become: true
+  tasks:
+
+  - name: Update system
+    ansible.builtin.pacman:
+      update_cache: true
+      upgrade: true
+
+  - name: Install packages 1
+    ansible.builtin.pacman:
+      name:
+        - neovim
+        - vim
+        - firefox
+        - curl
+        - wget
+        - jq
+        - git
+      state: present
+
+  - name: Install packages 2
+    ansible.builtin.pacman:
+      name:
+        - base-devel
+        - wezterm
+        - ttf-jetbrains-mono-nerd
+        - spice-vdagent
+        - docker
+        - docker-compose
+      state: present
+
+  - name: Install packages 3
+    ansible.builtin.pacman:
+      name:
+        - mesa
+        - nmap
+        - wireshark-qt
+        - radamsa
+        - afl
+        - python-pycryptodome
+        - zsh
+      state: present
+    
+
+  - name: Add BlackArch repository
+    ansible.builtin.shell:
+      echo "[blackarch]" >> /etc/pacman.conf
+      echo bash -c 'echo -e "[blackarch]\nServer = https://blackarch.mirror.evilcorp.xyz/blackarch/\$repo/os/\$arch" >> /etc/pacman.conf'
+      pacman -Syy
+      pacman-key --init
+      pacman-key --populate blackarch
+      pacman -Syu --noconfirm
+
+  - name: Install VirtualBox
+    ansible.builtin.pacman:
+      name:
+        - virtualbox
+        - virtualbox-host-modules-arch
+      state: present
+
+  - name: Install VirtualBox Guest Utils
+    ansible.builtin.pacman:
+      name: virtualbox-guest-utils
+      state: present
+
+  - name: Enable system services
+    ansible.builtin.systemd:
+      name: docker
+      enabled: yes
+
+  - name: Enable VirtualBox service (only on x86_64)
+    ansible.builtin.systemd:
+      name: vboxservice
+      enabled: yes
+    when: ansible_architecture == "x86_64"
+
+  - name: Ensure docker group exists
+    ansible.builtin.group:
+      name: docker
+      state: present
+
+  - name: Ensure wireshark group exists
+    ansible.builtin.group:
+      name: wireshark
+      state: present
+
+  - name: Add arch user to groups
+    ansible.builtin.user:
+      name: arch
+      groups: docker,wireshark
+      append: yes
+
+  - name: Create .zshrc for user
+    ansible.builtin.file:
+      path: /home/arch/.zshrc
+      state: touch
+      owner: arch
+      group: arch
+      mode: '0644'
+
+  - name: Change shell to zsh
+    ansible.builtin.user:
+      name: arch
+      shell: /bin/zsh
+
+  - name: Append zsh extensions to .zshrc
+    ansible.builtin.command: /bin/bash -c 'su - arch -c "cat /dotfiles/zsh_extensions.zsh >> /home/arch/.zshrc"'
+
+  - name: Clear pacman cache
+    ansible.builtin.command: pacman -Scc --noconfirm

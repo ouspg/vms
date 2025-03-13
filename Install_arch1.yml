@@ -1,0 +1,143 @@
+---
+- name: Install base Arch and bootloader
+  hosts: all
+  vars:
+    dotfiles_dir: "dotfiles"
+  become: true
+  tasks:
+
+    - name: Set system time and date
+      ansible.builtin.command: timedatectl
+
+    - name: Initialize and populate pacman keyring
+      ansible.builtin.shell: |
+        pacman-key --init
+        pacman-key --populate archlinux
+
+    - name: Install Arch Linux base system
+      ansible.builtin.command: pacstrap /mnt base linux linux-firmware
+
+    - name: Generate fstab
+      ansible.builtin.command: genfstab -U /mnt >> /mnt/etc/fstab
+
+    # segment
+
+    - name: Install nano
+      ansible.builtin.command: arch-chroot /mnt pacman -Sy nano --noconfirm
+
+    - name: Install systemd-boot
+      ansible.builtin.command: arch-chroot /mnt bootctl install
+
+    - name: Ensure loader directory exists
+      ansible.builtin.file:
+        path: /mnt/boot/loader/entries
+        state: directory
+        mode: '0755'
+
+    - name: Create arch.conf
+      ansible.builtin.copy:
+        dest: /mnt/boot/loader/entries/arch.conf
+        content: |
+          title   Arch Linux
+          linux   /vmlinuz-linux
+          initrd  /initramfs-linux.img
+          options root=/dev/sda2 rw
+        mode: '0644'
+
+    - name: Create loader.conf
+      ansible.builtin.copy:
+        dest: /mnt/boot/loader/loader.conf
+        content: |
+          default arch
+          timeout 3
+          editor 0
+        mode: '0644'
+
+    # segment
+
+    - name: Refresh pacman keys in chroot
+      ansible.builtin.shell: |
+        arch-chroot /mnt pacman-key --init
+        arch-chroot /mnt pacman-key --populate archlinux
+        arch-chroot /mnt pacman-key --refresh-keys
+
+    - name: Set correct permissions for pacman keyring directory
+      ansible.builtin.file:
+        path: /mnt/etc/pacman.d/gnupg
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Update system
+      ansible.builtin.command: arch-chroot /mnt pacman -Syu --noconfirm
+
+    - name: Install sudo
+      ansible.builtin.command: arch-chroot /mnt pacman -S sudo --noconfirm
+
+    # segment
+
+    - name: Create arch user
+      ansible.builtin.command: arch-chroot /mnt useradd -m -G wheel arch
+      
+    - name: Set password for arch user
+      ansible.builtin.command: arch-chroot /mnt sh -c 'echo "arch:arch" | chpasswd'
+    
+    - name: Allow sudo for wheel group
+      ansible.builtin.copy:
+        content: "%wheel ALL=(ALL) ALL"
+        dest: "/mnt/etc/sudoers.d/wheel"
+        mode: '0440'
+
+    # segment
+
+    - name: Ensure user home directory exists
+      ansible.builtin.file:
+        path: "/mnt/home/arch"
+        state: directory
+        mode: '0755'
+
+    - name: Copy wezterm.lua to user home
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/dotfiles/wezterm.lua"
+        dest: "/mnt/home/arch/.wezterm.lua"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Ensure systemd network directory exists
+      ansible.builtin.file:
+        path: "/mnt/etc/systemd/network"
+        state: directory
+        mode: '0755'
+
+    - name: Copy 20-wired.network file to systemd network config
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/dotfiles/20-wired.network"
+        dest: "/mnt/etc/systemd/network/20-wired.network"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Ensure dotfiles directory exists
+      ansible.builtin.file:
+        path: "/mnt/{{ dotfiles_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy zsh extensions file
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/dotfiles/zsh_extensions.zsh"
+        dest: "/mnt/{{ dotfiles_dir }}/zsh_extensions.zsh"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Install NetworkManager and OpenSSH
+      ansible.builtin.command: arch-chroot /mnt pacman -Sy --noconfirm networkmanager openssh
+
+    - name: Enable system services
+      ansible.builtin.command: arch-chroot /mnt systemctl enable systemd-networkd systemd-resolved NetworkManager sshd
+
+    - name: Install Python
+      ansible.builtin.command: arch-chroot /mnt pacman -Sy --noconfirm python
