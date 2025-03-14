@@ -1,0 +1,80 @@
+#Code taken from somewhere might need modification. Dont forget to remove from packer file2 if not needed/wanted
+
+---
+- name: Configure Finnish Locale on Arch Linux
+  hosts: localhost
+  become: yes
+  tasks:
+
+    - name: Set Finnish keymap for console
+      copy:
+        dest: /etc/vconsole.conf
+        content: |
+          KEYMAP=fi
+          FONT=lat9w-16
+
+    - name: Ensure necessary locales are enabled
+      replace:
+        path: /etc/locale.gen
+        regexp: '^#?(en_US.UTF-8 UTF-8|fi_FI.UTF-8 UTF-8)'
+        replace: '\1'
+      notify: Regenerate locale
+
+    - name: Regenerate locale
+      command: locale-gen
+      listen: Regenerate locale
+
+    - name: Set system-wide locale
+      copy:
+        dest: /etc/locale.conf
+        content: |
+          LANG=en_US.UTF-8
+          LC_TIME=fi_FI.UTF-8
+          LC_MEASUREMENT=fi_FI.UTF-8
+          LC_MONETARY=fi_FI.UTF-8
+          LC_NUMERIC=fi_FI.UTF-8
+          LC_PAPER=fi_FI.UTF-8
+          LC_COLLATE=C
+
+    - name: Set timezone to Europe/Helsinki
+      file:
+        src: /usr/share/zoneinfo/Europe/Helsinki
+        dest: /etc/localtime
+        state: link
+
+    - name: Sync hardware clock
+      command: hwclock --systohc
+
+    - name: Enable and start systemd-timesyncd for time synchronization
+      systemd:
+        name: systemd-timesyncd
+        enabled: yes
+        state: started
+
+    - name: Configure Finnish keyboard for X11
+      copy:
+        dest: /etc/X11/xorg.conf.d/00-keyboard.conf
+        content: |
+          Section "InputClass"
+              Identifier "system-keyboard"
+              MatchIsKeyboard "on"
+              Option "XkbLayout" "fi"
+          EndSection
+
+    - name: Verify locale settings
+      command: locale
+      register: locale_output
+      changed_when: false
+
+    - name: Show locale settings
+      debug:
+        msg: "{{ locale_output.stdout_lines }}"
+
+    - name: Verify keymap settings
+      command: localectl status
+      register: keymap_output
+      changed_when: false
+
+    - name: Show keymap settings
+      debug:
+        msg: "{{ keymap_output.stdout_lines }}"
