@@ -104,7 +104,7 @@ build {
 
   provisioner "ansible" {
   command = "ansible-playbook"
-  playbook_file = "${path.cwd}/create_partitions2.yml"
+  playbook_file = "${path.cwd}/create_partitions.yml"
   user = "root"
   inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
   extra_arguments = [
