@@ -7,46 +7,12 @@
   become: true
   tasks:
 
+# installs zsh for user and adds it as the default shell
+
   - name: Update system
     ansible.builtin.pacman:
       update_cache: true
       upgrade: true
-
-  - name: Install packages 1
-    ansible.builtin.pacman:
-      name:
-        - neovim
-        - vim
-        - firefox
-        - curl
-        - wget
-        - jq
-        - git
-      state: present
-
-  - name: Install packages 2
-    ansible.builtin.pacman:
-      name:
-        - base-devel
-        - wezterm
-        - ttf-jetbrains-mono-nerd
-        - spice-vdagent
-        - docker
-        - docker-compose
-      state: present
-
-  - name: Install packages 3
-    ansible.builtin.pacman:
-      name:
-        - mesa
-        - nmap
-        - wireshark-qt
-        - radamsa
-        - afl
-        - python-pycryptodome
-        - zsh
-      state: present
-    
 
   - name: Add BlackArch repository
     ansible.builtin.shell:
@@ -57,44 +23,11 @@
       pacman-key --populate blackarch
       pacman -Syu --noconfirm
 
-  - name: Install VirtualBox
+  - name: zsh
     ansible.builtin.pacman:
       name:
-        - virtualbox
-        - virtualbox-host-modules-arch
+        - zsh
       state: present
-
-  - name: Install VirtualBox Guest Utils
-    ansible.builtin.pacman:
-      name: virtualbox-guest-utils
-      state: present
-
-  - name: Enable system services
-    ansible.builtin.systemd:
-      name: docker
-      enabled: yes
-
-  - name: Enable VirtualBox service (only on x86_64)
-    ansible.builtin.systemd:
-      name: vboxservice
-      enabled: yes
-    when: ansible_architecture == "x86_64"
-
-  - name: Ensure docker group exists
-    ansible.builtin.group:
-      name: docker
-      state: present
-
-  - name: Ensure wireshark group exists
-    ansible.builtin.group:
-      name: wireshark
-      state: present
-
-  - name: Add arch user to groups
-    ansible.builtin.user:
-      name: arch
-      groups: docker,wireshark
-      append: yes
 
   - name: Create .zshrc for user
     ansible.builtin.file:

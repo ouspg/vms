@@ -65,6 +65,16 @@ build {
   ]
 }
 
+  provisioner "ansible" {
+  command = "ansible-playbook"
+  playbook_file = "${path.cwd}/install_packages.yml"
+  user = "arch"
+  inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
+  extra_arguments = [
+    "--extra-vars", "ansible_env={'LC_ALL': 'C.UTF-8'} ansible_become=true ansible_become_method=sudo"
+  ]
+}
+
 
 }
 

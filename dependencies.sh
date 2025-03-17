@@ -1,13 +1,15 @@
 #!/bin/bash
 
-pacman -S packer
+# installs most dependencies WARNING: NOT GUARANTEED TO WORK ON ALL SYSTEMS OR AT ALL
 
-pacman -S python3
+sudo pacman -S packer
 
-pacman -S python3-pip
+sudo pacman -S python3
 
-pacman -S passlib
+sudo pacman -S python3-pip
 
-pacman -S ansible
+sudo pacman -S passlib
+
+sudo pacman -S ansible
 
 ansbile-galaxy collection install community.general

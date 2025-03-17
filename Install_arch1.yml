@@ -5,6 +5,10 @@
   become: true
   tasks:
 
+# as of the creation of this arch automation none of the commands under can be removed or arch will break
+# this may change in the future but it is not advised to add or remove anything but changing around the username and password is allowed as long as it is updated across ALL files
+
+
     - name: Set system time and date
       ansible.builtin.command: timedatectl
 
@@ -37,7 +41,7 @@
         dest: /mnt/boot/loader/loader.conf
         content: |
           default arch
-          timeout 3
+          timeout 2
           editor 0
         mode: '0644'
 

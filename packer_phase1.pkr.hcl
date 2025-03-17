@@ -31,7 +31,7 @@ variable "vram" {
   default = "32"
 }
 
-//changed 30720 to 60000 because it wasnt enough 
+// affects disk size and if changed NEEDS TO BE CHANGED IN create_partitions.yml TOO!
 variable "disk_size" {
   type    = string
   default = "60000"

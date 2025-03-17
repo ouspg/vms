@@ -3,6 +3,8 @@
   become: true
   tasks:
 
+# creates disks for arch. As of making this there is no reliable way to make ansibles own commands make the disk boot and esp!
+
     - name: gpt
       ansible.builtin.command: parted /dev/sda mklabel gpt
 

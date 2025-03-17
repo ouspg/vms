@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# can be used to automatically run both packer files. If the script fails at step two it wont begin from step 1 as long as ones output is preserved.
+# not guaranteed to work on all systems.
+
 import os
 import subprocess
 

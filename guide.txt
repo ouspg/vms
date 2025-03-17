@@ -14,7 +14,7 @@ ansible
 ansible community general
 virtualbox
 
-if you want all of these to be installed on your computer automatically please run dependencies.sh
+if you want some of these to be installed on your computer automatically please run dependencies.sh
 note that this may not work for all computers since configurations may vary. script will not install virtualbox and its dependencies.
 
 step 3 initialize files
