@@ -108,4 +108,4 @@
 
     # Enable services
     - name: Enable necessary system services
-      ansible.builtin.command: arch-chroot /mnt systemctl enable systemd-networkd systemd-resolved NetworkManager sshd
+      ansible.builtin.command: arch-chroot /mnt systemctl enable NetworkManager sshd
