@@ -1,0 +1,16 @@
+
+---
+- name: Prepare for export
+  hosts: all
+  vars:
+  become: true
+  tasks:
+
+    - name: mkinitcpio
+      ansible.builtin.command: arch-chroot /mnt mkinitcpio -P
+
+    - name: Sync
+      ansible.builtin.command: sync
+
+    - name: unmount
+      ansible.builtin.command: umount -R /mnt
