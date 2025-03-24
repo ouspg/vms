@@ -13,8 +13,10 @@
       ansible.builtin.command: timedatectl
 
     - name: Initialize and populate pacman keyring
-      ansible.builtin.raw: |
-        pacman-key --init && pacman-key --populate archlinux
+      ansible.builtin.command: pacman-key --init
+
+    - name: Initialize and populate pacman keyring
+      ansible.builtin.command: pacman-key --populate archlinux
 
     - name: Install Arch Linux base system
       ansible.builtin.command: pacstrap /mnt base linux linux-firmware

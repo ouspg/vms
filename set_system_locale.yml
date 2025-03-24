@@ -36,21 +36,6 @@
           LC_PAPER=fi_FI.UTF-8
           LC_COLLATE=C
 
-    - name: Set timezone to Europe/Helsinki
-      file:
-        src: /usr/share/zoneinfo/Europe/Helsinki
-        dest: /etc/localtime
-        state: link
-
-    - name: Sync hardware clock
-      ansible.builtin.command: hwclock --systohc
-
-    - name: Enable and start systemd-timesyncd for time synchronization
-      systemd:
-        name: systemd-timesyncd
-        enabled: yes
-        state: started
-
     - name: create xorg directory
       ansible.builtin.command: sudo mkdir /etc/X11/xorg.conf.d
 

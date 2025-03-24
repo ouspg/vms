@@ -129,16 +129,13 @@ provisioner "ansible" {
   ]
 }
 
-provisioner "shell" {
-  inline = [
-    "arch-chroot /mnt mkinitcpio -P",
-    "sync"
-  ]
-}
-
-provisioner "shell" {
-  inline = [
-    "umount -R /mnt"
+provisioner "ansible" {
+  command = "ansible-playbook"
+  playbook_file = "${path.cwd}/prepare_export.yml"
+  user = "root"
+  inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
+  extra_arguments = [
+    "--extra-vars", "ansible_env={'LC_ALL': 'C.UTF-8'} ansible_become=true ansible_become_method=sudo"
   ]
 }
 
