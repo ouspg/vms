@@ -1,0 +1,61 @@
+- name: Create partitions
+  hosts: all
+  become: true
+  tasks:
+
+# creates disks for arch. As of making this there is no reliable way to make ansibles own commands make the disk boot and esp!
+    - name: wait 5 seconds
+      command: sleep 10
+
+    - name: gpt
+      ansible.builtin.command: parted /dev/vda mklabel gpt
+
+    - name: make primary "fat32"
+      ansible.builtin.command: parted /dev/vda mkpart primary fat32 1MiB 1024MiB
+
+    - name: "boot"
+      ansible.builtin.command: parted /dev/vda set 1 boot on
+
+    - name: "esp"
+      ansible.builtin.command: parted /dev/vda set 1 esp on
+
+    - name: part ext4
+      ansible.builtin.command: parted /dev/vda mkpart primary ext4 1025MiB 57GiB
+
+    - name: Format EFI partition as FAT32
+      ansible.builtin.filesystem:
+        fstype: vfat
+        dev: /dev/vda1
+        force: yes
+
+    - name: Format root partition as EXT4
+      ansible.builtin.filesystem:
+        fstype: ext4
+        dev: /dev/vda2
+        force: yes
+
+    - name: Ensure /mnt exists and mount root partition
+      ansible.builtin.file:
+        path: /mnt
+        state: directory
+        mode: '0755'
+
+    - name: Mount root partition to /mnt
+      ansible.builtin.mount:
+        path: /mnt
+        src: /dev/vda2
+        fstype: ext4
+        state: mounted
+
+    - name: Ensure /mnt/boot exists
+      ansible.builtin.file:
+        path: /mnt/boot
+        state: directory
+        mode: '0755'
+
+    - name: Mount EFI partition to /mnt/boot
+      ansible.builtin.mount:
+        path: /mnt/boot
+        src: /dev/vda1
+        fstype: vfat
+        state: mounted
