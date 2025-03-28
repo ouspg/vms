@@ -1,15 +1,24 @@
-#!/bin/bash
+if [ -f /etc/arch-release ]; then
+    # Arch Linux commands
+    sudo pacman -S packer --noconfirm
+    sudo pacman -S python3 --noconfirm
+    sudo pacman -S python3-pip --noconfirm
+    sudo pacman -S passlib --noconfirm
+    sudo pacman -S ansible --noconfirm
+    ansible-galaxy collection install community.general
+    
+    packer init packer_phase1.pkr.hcl
+    packer init packer_phase1.pkr.hcl
 
-# installs most dependencies WARNING: NOT GUARANTEED TO WORK ON ALL SYSTEMS OR AT ALL
+elif [ -f /etc/lsb-release ] || [ -f /etc/debian_version ]; then
+    # Ubuntu (or Debian-based) commands
+    sudo apt update
+    sudo apt install -y packer python3 python3-pip python3-passlib ansible -y
+    ansible-galaxy collection install community.general
 
-sudo pacman -S packer
+    packer init packer_phase1.pkr.hcl
+    packer init packer_phase1.pkr.hcl
 
-sudo pacman -S python3
-
-sudo pacman -S python3-pip
-
-sudo pacman -S passlib
-
-sudo pacman -S ansible
-
-ansbile-galaxy collection install community.general
+else
+    echo "Unsupported OS"
+fi
