@@ -18,7 +18,7 @@
       ansible.builtin.command: parted /dev/sda set 1 esp on
 
     - name: part ext4
-      ansible.builtin.command: parted /dev/sda mkpart primary ext4 1025MiB 57GiB
+      ansible.builtin.command: parted /dev/sda mkpart primary ext4 1025MiB 38GiB
 
     - name: Format EFI partition as FAT32
       ansible.builtin.filesystem:

@@ -32,7 +32,7 @@ variable "vram" {
 
 variable "disk_size" {
   type    = string
-  default = "60000"
+  default = "40000"
 }
 
 variable "efi_release_file" {
@@ -85,12 +85,13 @@ source "qemu" "archlinux_qemu" {
   output_directory  = "${var.output_dir_qemu}"
   memory           = "${var.memory}"
   cpus             = "${var.cpus}"
-  accelerator      = "${var.accelerator}"
+  accelerator      = "none"
   format = "qcow2"
   ssh_username = "root"
   ssh_password = "root"
-  boot_wait         = "10s"
-  boot_command      = ["<enter>ip a<enter>date<enter><wait25><enter>echo \"root:root\" | chpasswd <enter>"]
+  ssh_timeout = "10m"
+  boot_wait         = "50s"
+  boot_command      = ["<wait50><enter>ip a<enter>date<enter><wait25><enter>echo \"root:root\" | chpasswd <enter>"]
 }
 
 source "virtualbox-iso" "archlinux_vbox" {
