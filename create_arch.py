@@ -33,7 +33,7 @@ def run_packer(build_type, base_os):
     if build_type == "1":
         print(f"Building with QEMU ({qemu_target})...")
         if not phase1_output_exists(build_type):
-            run_command(["packer", "build", "-only=" + qemu_target, "packer_phase1.pkr.hcl"])
+            run_command(["packer", "build", "-only=qemu.archlinux_qemu", "packer_phase1.pkr.hcl"])
         print("Starting phase 2 for QEMU...")
         subprocess.run("./checksum.sh")
         run_command(["packer", "build", "-only=" + qemu_target, "packer_phase2.pkr.hcl"])
