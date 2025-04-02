@@ -47,10 +47,10 @@ variable "dotfiles_dir" {
 
 variable "accelerator" {
   type    = string
-  default = "hvf" # Modify on Linux builders to kvm
+  default = "hvf"
 }
 
-source "qemu" "archlinux_qemu" {
+source "qemu" "archlinux_qemu_arch" {
   disk_image = true
   headless = true
   output_directory  = "${var.output_dir_qemu}"
@@ -62,9 +62,27 @@ source "qemu" "archlinux_qemu" {
   vm_name      = "archlinux-x86_64"
   format       = "qcow2"
   boot_wait    = "15s"
-  
+  accelerator = "none"
   efi_firmware_code = "/usr/share/OVMF/x64/OVMF_CODE.4m.fd"
   efi_firmware_vars = "/usr/share/OVMF/x64/OVMF_VARS.4m.fd"
+  qemu_binary = "/usr/bin/qemu-system-x86_64"
+}
+
+source "qemu" "archlinux_qemu_ubuntu" {
+  disk_image = true
+  headless = true
+  output_directory  = "${var.output_dir_qemu}"
+  disk_size  = "${var.disk_size}"
+  iso_url    = "${path.cwd}/output_archlinux_qemu/archlinux-x86_64"
+  iso_checksum = "sha256:${file("${path.cwd}/output_archlinux_qemu/checksum.txt")}"
+  ssh_username = "arch"
+  ssh_password = "arch"
+  vm_name      = "archlinux-x86_64"
+  format       = "qcow2"
+  boot_wait    = "15s"
+  accelerator = "none"
+  efi_firmware_code = "/usr/share/OVMF/x64/OVMF_CODE_4M.fd"
+  efi_firmware_vars = "/usr/share/OVMF/x64/OVMF_VARS_4M.fd"
   qemu_binary = "/usr/bin/qemu-system-x86_64"
 }
 
@@ -80,7 +98,7 @@ source "virtualbox-ovf" "archlinux_vbox" {
 }
 
 build {
-  sources = ["source.qemu.archlinux_qemu", "source.virtualbox-ovf.archlinux_vbox"]
+  sources = ["source.qemu.archlinux_qemu_ubuntu", "source.qemu.archlinux_qemu_arch", "source.virtualbox-ovf.archlinux_vbox"]
 
   provisioner "ansible" {
     command = "ansible-playbook"

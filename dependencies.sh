@@ -19,8 +19,13 @@ elif [ -f /etc/lsb-release ] || [ -f /etc/debian_version ]; then
     sudo add-apt-repository universe -y
 
     sudo apt update
-    sudo apt install -y packer python3 python3-pip python3-passlib ansible -y
+    sudo apt install ovmf -y
+    sudo apt install -y packer python3 python3-pip python3-passlib ansible
+    pip install --upgrade ansible
     ansible-galaxy collection install community.general
+ 
+    
+    sudo apt-get install qemu-system
 
     packer init packer_phase1.pkr.hcl
     packer init packer_phase1.pkr.hcl
