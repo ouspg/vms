@@ -81,8 +81,8 @@ source "qemu" "archlinux_qemu_ubuntu" {
   format       = "qcow2"
   boot_wait    = "15s"
   accelerator = "none"
-  efi_firmware_code = "/usr/share/OVMF/x64/OVMF_CODE_4M.fd"
-  efi_firmware_vars = "/usr/share/OVMF/x64/OVMF_VARS_4M.fd"
+  efi_firmware_code = "/usr/share/OVMF/OVMF_CODE_4M.fd"
+  efi_firmware_vars = "/usr/share/OVMF/OVMF_VARS_4M.fd"
   qemu_binary = "/usr/bin/qemu-system-x86_64"
 }
 
