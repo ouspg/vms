@@ -1,6 +1,7 @@
 #!/bin/bash
 
 if [ -f /etc/lsb-release ] || [ -f /etc/debian_version ]; then
+    sudo apt update && sudo apt upgrade -y
     sudo apt install -y python3 python3-pip python3-passlib ansible
     sudo pip install --upgrade ansible
     sudo pip3 install s3cmd
