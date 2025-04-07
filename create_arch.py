@@ -34,7 +34,7 @@ def phase1_output_exists(build_type):
         return os.path.exists("output_archlinux_vbox/archlinux-x86_64.ovf")
     return False
 
-def run_packer(build_type, base_os, copy_output):
+def run_packer(build_type, base_os):
     if base_os == "1":
         qemu_target = "qemu.archlinux_qemu_ubuntu"
     elif base_os == "2":
