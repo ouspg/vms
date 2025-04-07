@@ -34,7 +34,7 @@ def phase1_output_exists(build_type):
         return os.path.exists("output_archlinux_vbox/archlinux-x86_64.ovf")
     return False
 
-def run_packer(build_type, base_os):
+def run_packer(build_type, base_os, copy_output):
     if base_os == "1":
         qemu_target = "qemu.archlinux_qemu_ubuntu"
     elif base_os == "2":
@@ -60,15 +60,13 @@ def run_packer(build_type, base_os):
         print("Invalid choice. Please enter 1 or 2.")
         sys.exit(1)
 
-def copy_final_output():
     if os.path.exists("output_archlinux2_qemu/archlinux-x86_64"):
-        subprocess.run("s3cmd put output_archlinux2_qemu/archlinux-x86_64 s3://Vms/archlinux-x86_64") 
+        run_command(["s3cmd", "put", "output_archlinux2_qemu/archlinux-x86_64", "s3://Vms/archlinux-x86_64"])
     elif os.path.exists("output_archlinux2_vbox/archlinux-x86_64.ovf"):
-        subprocess.run("s3cmd put output_archlinux2_vbox/archlinux-x86_64 s3://Vms/archlinux-x86_64")
+        run_command(["s3cmd", "put", "output_archlinux2_qemu/archlinux-x86_64", "s3://Vms/archlinux-x86_64"])
     else:
-        print(f"Neither output exists, exiting")
-        sys.exit(1)
-
+        print(f"Neither output exists, skipping")
+    
 if __name__ == "__main__":
     # Ask to run initial setup
     if not Path(".setup_done").exists():
