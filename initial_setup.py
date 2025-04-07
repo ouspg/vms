@@ -35,9 +35,18 @@ def initial_setup():
     print("Initial setup complete.")
 
 def configure_allas():
-    print("configuring allas")
+    print("Configuring Allas...")
 
-    run_command("sudo apt install restic")
-    run_command("curl https://rclone.org/install.sh | bash")
+    try:
+        run_command("sudo apt install -y restic")
+    except subprocess.CalledProcessError:
+        print("Restic is already installed, skipping.")
+
+    try:
+        run_command("curl https://rclone.org/install.sh | sudo bash")
+    except subprocess.CalledProcessError:
+        print("Rclone is already installed or failed to install, skipping.")
+
     run_command("wget https://raw.githubusercontent.com/CSCfi/allas-cli-utils/master/allas_conf")
+    
     run_command("source allas_conf --mode s3 --user {username}")
