@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from initial_setup import initial_setup, configure_allas
+from datetime import datetime
 
 def run_command(cmd):
     try:
@@ -16,10 +16,6 @@ def run_command(cmd):
 def ask_user(prompt, skip_file):
     if Path(skip_file).exists():
         return False
-
-    print(prompt)
-    print("1) Yes\n2) No\n3) No, never ask again")
-    choice = input("Choice: ").strip()
 
     if choice == "1":
         return True
@@ -61,25 +57,15 @@ def run_packer(build_type, base_os):
         sys.exit(1)
 
     if os.path.exists("output_archlinux2_qemu/archlinux-x86_64"):
-        run_command(["s3cmd", "put", "output_archlinux2_qemu/archlinux-x86_64", "s3://Vms/archlinux-x86_64"])
+        run_command(["s3cmd", "put", "output_archlinux2_qemu/archlinux-x86_64", f"s3://Vms/archlinux-x86_64"])
+
     elif os.path.exists("output_archlinux2_vbox/archlinux-x86_64.ovf"):
-        run_command(["s3cmd", "put", "output_archlinux2_qemu/archlinux-x86_64", "s3://Vms/archlinux-x86_64"])
+        run_command(["s3cmd", "put", "output_archlinux2_vbox/archlinux-x86_64", f"s3://Vms/archlinux-x86_64"])
+
     else:
         print(f"Neither output exists, skipping")
     
 if __name__ == "__main__":
-    # Ask to run initial setup
-    if not Path(".setup_done").exists():
-        if os.path.exists("/etc/lsb-release") or os.path.exists("/etc/debian_version"):
-            if ask_user("Install dependencies?", ".skip_setup_prompt"):
-                initial_setup()
-        else:
-            print("Unsupported OS for setup.")
-
-    # Ask to configure Allas
-    if ask_user("Configure Allas?", ".skip_allas_prompt"):
-        configure_allas()
-
     base_os = input("Select base OS: 1) Ubuntu  2) Arch: ")
     choice = input("Select build type: 1) QEMU  2) VirtualBox: ")
     run_packer(choice, base_os)
