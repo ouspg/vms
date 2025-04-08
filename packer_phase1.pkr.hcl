@@ -90,7 +90,7 @@ source "qemu" "archlinux_qemu" {
   ssh_username = "root"
   ssh_password = "root"
   boot_wait         = "50s"
-  boot_command      = ["<wait60><enter>ip a<enter>date<enter><wait250><enter>echo \"root:root\" | chpasswd <enter>"]
+  boot_command      = ["<wait310><enter>echo \"root:root\" | chpasswd <enter>"]
 }
 
 source "virtualbox-iso" "archlinux_vbox" {

@@ -2,8 +2,10 @@
 
 
 echo "installing required packages please wait for install to finish. MANUAL CONFIG REGUIRED"
-read -p "Enter username for used for allas:" username
+#read -p "Enter username for used for allas:" username
 
+
+sudo apt update && sudo apt upgrade -y
 sudo apt update && sudo apt install -y wget gpg
 sudo add-apt-repository universe
 wget -O- https://apt.releases.hashicorp.com/gpg | sudo tee /etc/apt/trusted.gpg.d/hashicorp.asc
@@ -28,4 +30,8 @@ sudo pip3 install s3cmd
 
 wget https://raw.githubusercontent.com/CSCfi/allas-cli-utils/master/allas_conf
 
-source allas_conf --mode S3 --user ${username}
+sleep 5
+
+#source allas_conf --mode S3 --user $username
+
+echo "please run (source allas_conf --mode S3 --user your-csc-username) to finish configuration."
