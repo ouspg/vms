@@ -9,6 +9,7 @@
 *.fd 
 # Build output
 output_arch*
+output-*
 archlinuxarm
 allas_conf
 tmp

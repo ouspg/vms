@@ -1,0 +1,102 @@
+- name: Create partitions for Arch Linux VM
+  hosts: all
+  become: true
+  vars:
+      # Auto-detect VM type based on available devices or use override
+      vm_type: "{{ ansible_vm_type | default('auto') }}"
+      device: >-
+          {%- if vm_type == 'qemu' -%}
+            /dev/vda
+          {%- elif vm_type == 'vbox' -%}
+            /dev/sda
+          {%- else -%}
+            {%- if ansible_devices.vda is defined -%}
+              /dev/vda
+            {%- else -%}
+              /dev/sda
+            {%- endif -%}
+          {%- endif -%}
+      wait_time: "{{ 10 if (vm_type == 'qemu' or (vm_type == 'auto' and ansible_devices.vda is defined)) else 0 }}"
+
+  tasks:
+      - name: Debug VM configuration
+        debug:
+            msg:
+                - "Detected VM type: {{ 'qemu' if ansible_devices.vda is defined else 'vbox' }}"
+                - "Using device: {{ device }}"
+                - "Wait time: {{ wait_time }} seconds"
+
+      - name: Wait for device to be ready (QEMU/virtio)
+        command: sleep {{ wait_time }}
+        when: wait_time | int > 0
+
+      - name: Create GPT partition table
+        ansible.builtin.parted:
+            device: "{{ device }}"
+            label: gpt
+
+      - name: Create EFI system partition (FAT32)
+        ansible.builtin.parted:
+            device: "{{ device }}"
+            number: 1
+            part_start: 1MiB
+            part_end: 1024MiB
+            part_type: primary
+            fs_type: fat32
+            flags:
+                - boot
+                - esp
+
+      - name: Create root partition (ext4)
+        ansible.builtin.parted:
+            device: "{{ device }}"
+            number: 2
+            part_start: 1025MiB
+            part_end: 38GiB
+            part_type: primary
+            fs_type: ext4
+
+      - name: Format EFI partition as FAT32
+        ansible.builtin.filesystem:
+            fstype: vfat
+            dev: "{{ device }}1"
+            force: yes
+
+      - name: Format root partition as ext4
+        ansible.builtin.filesystem:
+            fstype: ext4
+            dev: "{{ device }}2"
+            force: yes
+
+      - name: Ensure /mnt directory exists
+        ansible.builtin.file:
+            path: /mnt
+            state: directory
+            mode: "0755"
+
+      - name: Mount root partition to /mnt
+        ansible.builtin.mount:
+            path: /mnt
+            src: "{{ device }}2"
+            fstype: ext4
+            state: mounted
+
+      - name: Ensure /mnt/boot directory exists
+        ansible.builtin.file:
+            path: /mnt/boot
+            state: directory
+            mode: "0755"
+
+      - name: Mount EFI partition to /mnt/boot
+        ansible.builtin.mount:
+            path: /mnt/boot
+            src: "{{ device }}1"
+            fstype: vfat
+            state: mounted
+
+      - name: Display mount information
+        debug:
+            msg:
+                - "Root partition ({{ device }}2) mounted at /mnt"
+                - "EFI partition ({{ device }}1) mounted at /mnt/boot"
+                - "Ready for Arch Linux installation"

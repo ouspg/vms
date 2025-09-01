@@ -1,0 +1,86 @@
+---
+- name: Install packages
+  hosts: all
+  vars:
+      dotfiles_dir: "dotfiles"
+      ansible_become_password: "arch"
+  become: true
+  tasks:
+      - name: Update system
+        ansible.builtin.pacman:
+            update_cache: true
+            upgrade: true
+
+      - name: Initialize pacman keyring
+        ansible.builtin.command: pacman-key --init
+        args:
+            creates: /etc/pacman.d/gnupg/gpg.conf
+
+      - name: Add GPG option for BlackArch keyring compatibility
+        ansible.builtin.lineinfile:
+            path: /etc/pacman.d/gnupg/gpg.conf
+            line: "allow-weak-key-signatures"
+            create: yes
+
+      - name: Download BlackArch keyring
+        ansible.builtin.get_url:
+            url: https://www.blackarch.org/keyring/blackarch-keyring.pkg.tar.zst
+            dest: /tmp/blackarch-keyring.pkg.tar.zst
+            mode: "0644"
+
+      - name: Install BlackArch keyring (repository setup only)
+        ansible.builtin.shell: pacman --config /dev/null --noconfirm -U /tmp/blackarch-keyring.pkg.tar.zst
+        args:
+            creates: /usr/share/pacman/keyrings/blackarch.gpg
+
+      - name: Populate BlackArch keyring
+        ansible.builtin.command: pacman-key --populate
+
+      - name: Download BlackArch mirror list
+        ansible.builtin.get_url:
+            url: https://blackarch.org/blackarch-mirrorlist
+            dest: /etc/pacman.d/blackarch-mirrorlist
+            mode: "0644"
+
+      - name: Add BlackArch repository to pacman.conf
+        ansible.builtin.blockinfile:
+            path: /etc/pacman.conf
+            block: |
+                [blackarch]
+                Include = /etc/pacman.d/blackarch-mirrorlist
+            marker: "# {mark} ANSIBLE MANAGED BLOCK - BlackArch"
+            create: no
+
+      - name: Clean up temporary files
+        ansible.builtin.file:
+            path: /tmp/blackarch-keyring.pkg.tar.zst
+            state: absent
+
+      - name: Update package database after BlackArch setup
+        ansible.builtin.pacman:
+            update_cache: true
+
+      - name: zsh
+        ansible.builtin.pacman:
+            name:
+                - zsh
+            state: present
+
+      - name: Create .zshrc for user
+        ansible.builtin.file:
+            path: /home/arch/.zshrc
+            state: touch
+            owner: arch
+            group: arch
+            mode: "0644"
+
+      - name: Change shell to zsh
+        ansible.builtin.user:
+            name: arch
+            shell: /bin/zsh
+
+      - name: Append zsh extensions to .zshrc
+        ansible.builtin.command: /bin/bash -c 'su - arch -c "cat /dotfiles/zsh_extensions.zsh >> /home/arch/.zshrc"'
+
+      - name: Clear pacman cache
+        ansible.builtin.command: pacman -Scc --noconfirm

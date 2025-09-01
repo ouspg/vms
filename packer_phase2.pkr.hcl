@@ -102,7 +102,7 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/install_arch2.yml"
+    playbook_file = "${path.cwd}/ansible/install_arch2.yml"
     user = "arch"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
@@ -112,7 +112,7 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/install_packages.yml"
+    playbook_file = "${path.cwd}/ansible/install_packages.yml"
     user = "arch"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
@@ -122,7 +122,7 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/set_time_fi.yml"
+    playbook_file = "${path.cwd}/ansible/set_time_fi.yml"
     user = "arch"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [

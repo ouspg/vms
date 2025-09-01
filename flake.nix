@@ -50,12 +50,9 @@
         # Script to initialize packer
         initPacker = pkgs.writeShellScriptBin "init-packer" ''
           echo "Initializing Packer..."
-          if [ -f packer_phase1.pkr.hcl ]; then
-            packer init packer_phase1.pkr.hcl
-            echo "Packer initialized successfully"
-          else
-            echo "packer_phase1.pkr.hcl not found in current directory"
-          fi
+          packer init packer_phase1.pkr.hcl
+          packer init packer_phase2.pkr.hcl
+          echo "Packer initialized successfully"
         '';
 
         # Complete setup script

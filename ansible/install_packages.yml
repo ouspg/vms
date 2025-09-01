@@ -1,0 +1,149 @@
+---
+- name: Install packages
+  hosts: all
+  vars:
+      dotfiles_dir: "dotfiles"
+      ansible_become_password: "arch"
+  become: true
+  tasks:
+      # note that none of the packages under are required for running arch. modification can be made without breaking anything
+      # if GUI needs to be installed for example gnome just add it to one of the lists below and add gdm.service to start on start up. not guaranteed to work automatically since gnome likes to ask what to install.
+
+      - name: Install packages 1
+        ansible.builtin.pacman:
+            name:
+                - neovim
+                - vim
+                - firefox
+                - curl
+                - wget
+                - jq
+                - git
+            state: present
+
+      - name: Install packages 2
+        ansible.builtin.pacman:
+            name:
+                - base-devel
+                - wezterm
+                - ttf-jetbrains-mono-nerd
+                - spice-vdagent
+                - docker
+                - docker-compose
+            state: present
+
+      - name: Install packages 3
+        ansible.builtin.pacman:
+            name:
+                - mesa
+                - nmap
+                - wireshark-qt
+                - radamsa
+                - afl
+                - python-pycryptodome
+            state: present
+
+      - name: zsh plugins install
+        ansible.builtin.pacman:
+            name:
+                - zsh-autosuggestions
+                - zsh-syntax-highlighting
+            state: present
+
+      - name: Install complete KDE Plasma desktop  - meta package
+        ansible.builtin.pacman:
+            name:
+                - plasma-meta
+                - libreoffice-fresh
+            state: present
+      # - name: Install minimal KDE Plasma desktop (option 2 - individual packages)
+      # ansible.builtin.pacman:
+      #     name:
+      #         - plasma-desktop
+      #         - plasma-workspace
+      #         - plasma-integration
+      #         - systemsettings
+      #         - dolphin
+      #         - dolphin-plugins
+      #         - ark
+      #         - konsole
+      #         - kate
+      #         - okular
+      #         - gwenview
+      #         - spectacle
+      #         - plasma-nm
+      #         - plasma-pa
+      #         - kdeplasma-addons
+      #         - kde-gtk-config
+      #         - powerdevil
+      #         - sddm
+      #         - sddm-kcm
+      #         - bluedevil
+      #         - kscreen
+      #         - kinfocenter
+      #         - kcalc
+      #         - plasma-systemmonitor
+      #         - ffmpegthumbs
+      #     state: present
+      # tags: plasma_minimal
+
+      - name: Enable system services
+        ansible.builtin.systemd:
+            name: "{{ item }}"
+            enabled: yes
+        loop:
+            - docker
+            - sddm
+
+      - name: Ensure groups exist
+        ansible.builtin.group:
+            name: "{{ item }}"
+            state: present
+        loop:
+            - docker
+            - wireshark
+
+      - name: Add arch user to groups
+        ansible.builtin.user:
+            name: arch
+            groups: docker,wireshark
+            append: yes
+
+      - name: Copy wallpaper image to system
+        ansible.builtin.copy:
+            src: files/hacker.jpg
+            dest: /usr/share/wallpapers/hacker.jpg
+            mode: "0644"
+            owner: root
+            group: root
+
+      - name: Ensure KDE config directory exists for arch user
+        ansible.builtin.file:
+            path: /home/arch/.config
+            state: directory
+            owner: arch
+            group: arch
+            mode: "0755"
+
+      - name: Create KDE desktop wallpaper configuration
+        ansible.builtin.copy:
+            dest: /home/arch/.config/plasma-org.kde.plasma.desktop-appletsrc
+            content: |
+                [ActionPlugins][0]
+                RightButton;NoModifier=org.kde.contextmenu
+
+                [Containments][1]
+                activityId=
+                formfactor=0
+                immutability=1
+                lastScreen=0
+                location=0
+                plugin=org.kde.plasma.folder
+                wallpaperplugin=org.kde.image
+
+                [Containments][1][Wallpaper][org.kde.image][General]
+                Image=file:///usr/share/wallpapers/hacker.jpg
+                SlidePaths=/usr/share/wallpapers/
+            owner: arch
+            group: arch
+            mode: "0644"

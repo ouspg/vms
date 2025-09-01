@@ -77,8 +77,8 @@ locals {
 }
 
 source "qemu" "archlinux_qemu" {
-  iso_url           = "https://arch.kyberorg.fi/iso/latest/archlinux-x86_64.iso"
-  iso_checksum      = "file:https://arch.kyberorg.fi/iso/latest/sha256sums.txt"
+  iso_url           = "https://mirror.5i.fi/archlinux/iso/latest/archlinux-x86_64.iso"
+  iso_checksum      = "file:https://mirror.5i.fi/archlinux/iso/latest/sha256sums.txt"
   headless = true
   vm_name = "archlinux-x86_64"
   disk_size         = "${var.disk_size}"
@@ -102,21 +102,21 @@ source "virtualbox-iso" "archlinux_vbox" {
   output_directory  = "${var.output_dir_vbox}"
   firmware = "efi"
   disk_size = "${var.disk_size}"
-  iso_url = "https://arch.kyberorg.fi/iso/latest/archlinux-x86_64.iso"
-  iso_checksum = "file:https://arch.kyberorg.fi/iso/latest/sha256sums.txt"
+  iso_url           = "https://mirror.5i.fi/archlinux/iso/latest/archlinux-x86_64.iso"
+  iso_checksum      = "file:https://mirror.5i.fi/archlinux/iso/latest/sha256sums.txt"
   hard_drive_interface = "sata"
   ssh_username = "root"
   ssh_password = "root"
   boot_wait         = "5s"
   boot_command      = ["<enter><wait25><enter>echo \"root:root\" | chpasswd <enter>"]
-  
+
   vboxmanage = [
     ["modifyvm", "{{ .Name }}", "--memory", "${var.memory}"],
     ["modifyvm", "{{ .Name }}", "--cpus", "${var.cpus}"],
     ["modifyvm", "{{ .Name }}", "--vram", "${var.vram}"]
   ]
 
-  
+
 }
 
 build {
@@ -124,11 +124,11 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/create_partitions_qemu.yml"
+    playbook_file = "${path.cwd}/ansible/create_partitions.yml"
     user = "root"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
-      "--extra-vars", "ansible_env={'LC_ALL': 'C.UTF-8'} ansible_become=true ansible_become_method=sudo"
+      "--extra-vars", "ansible_env={'LC_ALL': 'C.UTF-8'} ansible_become=true ansible_become_method=sudo ansible_vm_type=qemu"
     ]
   }
 
@@ -140,7 +140,7 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/Install_arch1_qemu.yml"
+    playbook_file = "${path.cwd}/ansible/Install_arch1_qemu.yml"
     user = "root"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
@@ -150,7 +150,7 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/prepare_export.yml"
+    playbook_file = "${path.cwd}/ansible/prepare_export.yml"
     user = "root"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
@@ -164,11 +164,11 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/create_partitions_vbox.yml"
+    playbook_file = "${path.cwd}/ansible/create_partitions.yml"
     user = "root"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
-      "--extra-vars", "ansible_env={'LC_ALL': 'C.UTF-8'} ansible_become=true ansible_become_method=sudo"
+      "--extra-vars", "ansible_env={'LC_ALL': 'C.UTF-8'} ansible_become=true ansible_become_method=sudo ansible_vm_type=vbox"
     ]
   }
 
@@ -180,7 +180,7 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/Install_arch1_vbox.yml"
+    playbook_file = "${path.cwd}/ansible/Install_arch1_vbox.yml"
     user = "root"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
@@ -190,7 +190,7 @@ build {
 
   provisioner "ansible" {
     command = "ansible-playbook"
-    playbook_file = "${path.cwd}/prepare_export.yml"
+    playbook_file = "${path.cwd}/ansible/prepare_export.yml"
     user = "root"
     inventory_file_template = "controller ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
     extra_arguments = [
